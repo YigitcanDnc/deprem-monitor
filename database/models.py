@@ -1,92 +1,100 @@
+# -*- coding: utf-8 -*-
 from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from geoalchemy2 import Geometry
 from datetime import datetime
-from dotenv import load_dotenv
 import os
 
-# .env varsa yükle (local development için)
-load_dotenv()
+# Railway ve local için DATABASE_URL okuma
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Railway environment variable'dan oku
-DATABASE_URL = os.environ.get("DATABASE_URL") or os.getenv("DATABASE_URL")
+# Eğer bulunamazsa .env'den dene
+if not DATABASE_URL:
+    from dotenv import load_dotenv
+    load_dotenv()
+    DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("❌ DATABASE_URL bulunamadı! Railway Variables'ı kontrol et.")
+    raise ValueError("❌ DATABASE_URL bulunamadı! Railway Variables veya .env dosyasını kontrol et.")
 
-# Veritabanı bağlantısı
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# PostgreSQL URL düzeltmesi (Railway postgres:// -> postgresql:// olabilir)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+print(f"✅ DATABASE_URL bulundu: {DATABASE_URL[:30]}...")
+
+# SQLAlchemy engine oluştur
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10
+)
+
+# Base ve Session
 Base = declarative_base()
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
+# Earthquake Model
 class Earthquake(Base):
-    """Deprem verileri tablosu"""
     __tablename__ = "earthquakes"
     
     id = Column(Integer, primary_key=True, index=True)
-    event_id = Column(String, unique=True, index=True)  # Benzersiz deprem ID
-    timestamp = Column(DateTime, index=True)            # Deprem zamanı
-    latitude = Column(Float)                            # Enlem
-    longitude = Column(Float)                           # Boylam
-    magnitude = Column(Float, index=True)               # Büyüklük
-    depth = Column(Float)                               # Derinlik (km)
-    location = Column(String)                           # Konum açıklaması
-    source = Column(String)                             # AFAD, USGS, vb.
-    geometry = Column(Geometry('POINT', srid=4326))     # Coğrafi nokta
+    event_id = Column(String, unique=True, index=True, nullable=False)
+    timestamp = Column(DateTime, nullable=False, index=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    magnitude = Column(Float, nullable=False, index=True)
+    depth = Column(Float, nullable=False)
+    location = Column(String, nullable=False)
+    source = Column(String, nullable=False, index=True)
+    geometry = Column(Geometry('POINT', srid=4326))
     created_at = Column(DateTime, default=datetime.utcnow)
 
-
+# Anomaly Model
 class Anomaly(Base):
-    """Tespit edilen anomaliler"""
     __tablename__ = "anomalies"
     
     id = Column(Integer, primary_key=True, index=True)
-    region = Column(String)                             # Bölge adı
-    start_time = Column(DateTime)                       # Anomali başlangıcı
-    end_time = Column(DateTime, nullable=True)          # Anomali bitişi
-    anomaly_type = Column(String)                       # frequency, b_value, vb.
-    score = Column(Float)                               # Anomali skoru
-    alert_level = Column(String)                        # yellow, orange, red
-    is_resolved = Column(Boolean, default=False)        # Çözüldü mü?
-    description = Column(String)                        # Açıklama
-    created_at = Column(DateTime, default=datetime.utcnow)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    radius_km = Column(Float, nullable=False)
+    z_score = Column(Float, nullable=False)
+    earthquake_count = Column(Integer, nullable=False)
+    baseline_rate = Column(Float)
+    current_rate = Column(Float)
+    location = Column(String)
+    is_active = Column(Boolean, default=True, index=True)
+    detected_at = Column(DateTime, default=datetime.utcnow, index=True)
+    resolved_at = Column(DateTime, nullable=True)
 
-
+# Alert Log Model
 class AlertLog(Base):
-    """Gönderilen uyarılar"""
     __tablename__ = "alert_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    anomaly_id = Column(Integer)                        # Hangi anomali için
-    sent_at = Column(DateTime, default=datetime.utcnow)
-    recipient = Column(String)                          # Alıcı email
-    alert_type = Column(String)                         # email, sms
-    message = Column(String)                            # Mesaj içeriği
+    anomaly_id = Column(Integer, nullable=False, index=True)
+    alert_type = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    sent_at = Column(DateTime, default=datetime.utcnow, index=True)
+    recipient = Column(String)
+    status = Column(String, default="sent")
 
-
-def init_database():
+# Database initialization
+def init_db():
     """Veritabanı tablolarını oluştur"""
     try:
         Base.metadata.create_all(bind=engine)
-        print("✅ Veritabanı tabloları başarıyla oluşturuldu!")
-        print(f"📊 Tablolar: {', '.join(Base.metadata.tables.keys())}")
+        print("✅ Veritabanı tabloları oluşturuldu")
         return True
     except Exception as e:
         print(f"❌ Veritabanı hatası: {e}")
         return False
 
-
-def get_db():
-    """Veritabanı session'ı oluştur"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 if __name__ == "__main__":
-    print("🔧 Veritabanı tabloları oluşturuluyor...")
-    init_database()
+    print("🔧 Veritabanı başlatılıyor...")
+    if init_db():
+        print("✅ Başarılı!")
+    else:
+        print("❌ Başarısız!")
