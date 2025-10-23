@@ -3,16 +3,17 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from geoalchemy2 import Geometry
 from datetime import datetime
-import os
 from dotenv import load_dotenv
+import os
 
-# .env dosyasından oku
+# .env varsa yükle (local development için)
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Railway environment variable'dan oku
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("❌ DATABASE_URL bulunamadı! .env dosyasını kontrol et.")
+    raise ValueError("❌ DATABASE_URL bulunamadı! Railway Variables'ı kontrol et.")
 
 # Veritabanı bağlantısı
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
