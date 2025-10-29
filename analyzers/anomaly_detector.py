@@ -230,45 +230,54 @@ class AnomalyDetector:
         return anomalies
     
     def save_anomalies(self, anomalies):
-        """Anomalileri veritabanına kaydet"""
+        """Anomalileri veritabanına kaydet - YENİ MODEL UYUMLU"""
         if not anomalies:
             return
         
         saved_count = 0
         
         for anomaly in anomalies:
-            # Aynı bölgede aktif anomali var mı kontrol et
-            existing = self.db.query(Anomaly).filter(
-                and_(
-                    Anomaly.region == anomaly['location'],
-                    Anomaly.is_resolved == False,
-                    Anomaly.anomaly_type == anomaly['type']
-                )
-            ).first()
-            
-            if existing:
-                # Mevcut anomaliyi güncelle
-                existing.score = anomaly.get('z_score', anomaly.get('last_magnitude', 0))
-                existing.alert_level = anomaly['alert_level']
-                existing.end_time = datetime.utcnow()
-            else:
-                # Yeni anomali kaydet
-                description = f"{anomaly['type']} anomalisi: {anomaly.get('recent_count', anomaly.get('count', 0))} deprem"
+            try:
+                # Aynı bölgede aktif anomali var mı kontrol et
+                existing = self.db.query(Anomaly).filter(
+                    and_(
+                        Anomaly.location == anomaly['location'],
+                        Anomaly.is_active == True
+                    )
+                ).first()
                 
-                new_anomaly = Anomaly(
-                    region=anomaly['location'],
-                    start_time=datetime.utcnow() - timedelta(hours=self.time_window),
-                    anomaly_type=anomaly['type'],
-                    score=anomaly.get('z_score', anomaly.get('last_magnitude', 0)),
-                    alert_level=anomaly['alert_level'],
-                    description=description
-                )
+                if existing:
+                    # Mevcut anomaliyi güncelle
+                    existing.z_score = anomaly.get('z_score', anomaly.get('last_magnitude', 0))
+                    existing.earthquake_count = anomaly.get('recent_count', anomaly.get('count', 0))
+                    existing.current_rate = anomaly.get('recent_count', 0)
+                else:
+                    # Yeni anomali kaydet - YENİ MODEL YAPISI
+                    new_anomaly = Anomaly(
+                        latitude=anomaly['center_lat'],
+                        longitude=anomaly['center_lon'],
+                        radius_km=50.0,
+                        z_score=anomaly.get('z_score', anomaly.get('last_magnitude', 0)),
+                        earthquake_count=anomaly.get('recent_count', anomaly.get('count', 0)),
+                        baseline_rate=anomaly.get('baseline_avg', 0),
+                        current_rate=anomaly.get('recent_count', 0),
+                        location=anomaly['location'],
+                        is_active=True,
+                        detected_at=datetime.utcnow()
+                    )
+                    
+                    self.db.add(new_anomaly)
+                    saved_count += 1
                 
-                self.db.add(new_anomaly)
-                saved_count += 1
+                self.db.commit()
+                
+            except Exception as e:
+                print(f"⚠️  Anomali kaydetme hatası: {e}")
+                self.db.rollback()
+                continue
         
-        self.db.commit()
-        print(f"\n💾 {saved_count} yeni anomali kaydedildi")
+        if saved_count > 0:
+            print(f"\n💾 {saved_count} yeni anomali kaydedildi")
     
     def analyze(self):
         """Tüm analizleri çalıştır"""
@@ -278,20 +287,26 @@ class AnomalyDetector:
         
         all_anomalies = []
         
-        # 1. Frekans anomalisi
-        freq_anomalies = self.detect_frequency_anomaly()
-        all_anomalies.extend(freq_anomalies)
+        try:
+            # 1. Frekans anomalisi
+            freq_anomalies = self.detect_frequency_anomaly()
+            all_anomalies.extend(freq_anomalies)
+            
+            # 2. Magnitüd artışı
+            mag_anomalies = self.detect_magnitude_escalation()
+            all_anomalies.extend(mag_anomalies)
+            
+            # Anomalileri kaydet
+            if all_anomalies:
+                self.save_anomalies(all_anomalies)
+                print(f"\n🎯 Toplam {len(all_anomalies)} anomali tespit edildi!")
+            else:
+                print("\n✅ Anomali tespit edilmedi - her şey normal görünüyor")
         
-        # 2. Magnitüd artışı
-        mag_anomalies = self.detect_magnitude_escalation()
-        all_anomalies.extend(mag_anomalies)
-        
-        # Anomalileri kaydet
-        if all_anomalies:
-            self.save_anomalies(all_anomalies)
-            print(f"\n🎯 Toplam {len(all_anomalies)} anomali tespit edildi!")
-        else:
-            print("\n✅ Anomali tespit edilmedi - her şey normal görünüyor")
+        except Exception as e:
+            print(f"❌ Anomali analizi hatası: {e}")
+            import traceback
+            traceback.print_exc()
         
         print("="*60 + "\n")
         
