@@ -15,7 +15,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #0d1117;
             color: #c9d1d9;
-            overflow: hidden;
+            overflow-x: hidden;
         }
         
         #header {
@@ -27,7 +27,7 @@
         }
         
         #header h1 {
-            font-size: 1.5em;
+            font-size: 1.8em;
             margin-bottom: 5px;
             color: #f3f4f6;
             font-weight: 700;
@@ -35,7 +35,7 @@
         
         #header p {
             opacity: 0.85;
-            font-size: 0.8em;
+            font-size: 0.9em;
             color: #d1d5db;
         }
         
@@ -47,7 +47,6 @@
             align-items: center;
             flex-wrap: wrap;
             border-bottom: 2px solid #30363d;
-            overflow-x: auto;
         }
         
         .btn {
@@ -75,7 +74,7 @@
         }
         
         .filter-group label {
-            font-size: 12px;
+            font-size: 13px;
             color: #d1d5db;
             font-weight: 500;
             white-space: nowrap;
@@ -93,35 +92,32 @@
         
         #mainContainer {
             display: flex;
-            flex-direction: column;
-            height: calc(100vh - 160px);
+            height: calc(100vh - 180px);
         }
         
         #leftPanel {
-            width: 100%;
-            max-height: 180px;
+            width: 320px;
             background: #161b22;
-            border-bottom: 2px solid #30363d;
+            border-right: 2px solid #30363d;
             overflow-y: auto;
-            padding: 10px;
+            padding: 15px;
         }
         
         #map {
             flex: 1;
-            min-height: 300px;
         }
         
         .panel-section {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             background: #1f2937;
-            padding: 10px;
+            padding: 15px;
             border-radius: 8px;
             border: 1px solid #30363d;
         }
         
         .panel-section h3 {
-            font-size: 0.9em;
-            margin-bottom: 8px;
+            font-size: 1em;
+            margin-bottom: 10px;
             color: #f3f4f6;
             border-bottom: 2px solid #dc2626;
             padding-bottom: 5px;
@@ -129,8 +125,8 @@
         
         .earthquake-item {
             background: #0d1117;
-            padding: 8px;
-            margin: 6px 0;
+            padding: 10px;
+            margin: 8px 0;
             border-radius: 6px;
             border-left: 4px solid;
             cursor: pointer;
@@ -147,26 +143,26 @@
         .earthquake-item.mag-low { border-left-color: #eab308; }
         
         .eq-magnitude {
-            font-size: 1.2em;
+            font-size: 1.3em;
             font-weight: bold;
             color: #dc2626;
         }
         
         .eq-location {
-            font-size: 0.8em;
+            font-size: 0.85em;
             color: #9ca3af;
             margin-top: 3px;
         }
         
         .eq-time {
-            font-size: 0.7em;
+            font-size: 0.75em;
             color: #6b7280;
             margin-top: 3px;
         }
         
         .legend {
             background: rgba(22, 27, 34, 0.95);
-            padding: 12px;
+            padding: 15px;
             margin: 10px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
@@ -174,25 +170,25 @@
         }
         
         .legend h4 {
-            margin: 0 0 8px 0;
+            margin: 0 0 10px 0;
             color: #f3f4f6;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            margin: 5px 0;
-            font-size: 11px;
+            margin: 6px 0;
+            font-size: 12px;
             color: #c9d1d9;
         }
         
         .legend-color {
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            margin-right: 6px;
+            margin-right: 8px;
             border: 2px solid #30363d;
         }
         
@@ -204,23 +200,23 @@
         }
         
         .checkbox-group input[type="checkbox"] {
-            margin-right: 5px;
+            margin-right: 8px;
             cursor: pointer;
         }
         
         .checkbox-group label {
-            font-size: 12px;
+            font-size: 13px;
         }
         
         #autoRefresh {
             position: fixed;
-            top: 70px;
+            top: 80px;
             right: 10px;
             background: #1f2937;
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 8px;
             border: 1px solid #30363d;
-            font-size: 10px;
+            font-size: 11px;
             color: #22c55e;
             z-index: 1000;
         }
@@ -228,12 +224,12 @@
         .anomaly-alert {
             background: linear-gradient(135deg, #dc2626, #991b1b);
             color: white;
-            padding: 10px 15px;
+            padding: 12px 20px;
             margin: 0;
             text-align: center;
             animation: pulse 2.5s infinite;
             border-bottom: 3px solid #7f1d1d;
-            font-size: 0.85em;
+            font-size: 0.9em;
         }
         
         @keyframes pulse {
@@ -247,7 +243,7 @@
             background: #dc2626;
             color: white;
             border: none;
-            padding: 10px;
+            padding: 12px;
             width: 100%;
             text-align: left;
             font-size: 14px;
@@ -273,28 +269,33 @@
         }
         
         .collapsible-content {
-            max-height: 500px;
             overflow: hidden;
             transition: max-height 0.3s ease-out;
         }
         
         .collapsible-content.collapsed {
-            max-height: 0;
+            max-height: 0 !important;
         }
         
         /* MOBİL UYUMLULUK - TABLET */
+        @media (max-width: 1024px) {
+            #leftPanel {
+                width: 280px;
+            }
+            
+            #header h1 {
+                font-size: 1.5em;
+            }
+        }
+        
+        /* MOBİL UYUMLULUK - TABLET PORTRAIT */
         @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+            }
+            
             .panel-toggle {
                 display: block;
-            }
-            
-            #controls {
-                padding-top: 5px;
-            }
-            
-            #leftPanel {
-                max-height: none;
-                height: auto;
             }
             
             #header h1 {
@@ -302,7 +303,7 @@
             }
             
             #header p {
-                font-size: 0.75em;
+                font-size: 0.8em;
             }
             
             #controls {
@@ -310,17 +311,32 @@
                 gap: 6px;
             }
             
+            #mainContainer {
+                flex-direction: column;
+                height: auto;
+                min-height: 70vh;
+            }
+            
+            #leftPanel {
+                width: 100%;
+                max-height: none;
+                border-right: none;
+                border-bottom: 2px solid #30363d;
+                padding: 10px;
+            }
+            
+            #map {
+                min-height: 60vh;
+                height: 60vh;
+            }
+            
             .btn {
                 padding: 6px 12px;
                 font-size: 12px;
             }
             
-            .filter-group {
-                width: auto;
-            }
-            
             .filter-group label {
-                font-size: 11px;
+                font-size: 12px;
             }
             
             .filter-group select,
@@ -330,26 +346,30 @@
             }
             
             .panel-section {
-                padding: 8px;
+                padding: 10px;
                 margin-bottom: 10px;
             }
             
             .earthquake-item {
-                padding: 6px;
+                padding: 8px;
             }
             
             #autoRefresh {
-                top: 60px;
+                top: 65px;
                 right: 8px;
                 font-size: 9px;
-                padding: 5px 8px;
+                padding: 6px 10px;
+            }
+            
+            .legend {
+                display: none;
             }
         }
         
         /* MOBİL UYUMLULUK - TELEFON */
         @media (max-width: 480px) {
             #header {
-                padding: 10px;
+                padding: 12px;
             }
             
             #header h1 {
@@ -369,7 +389,7 @@
             
             .btn {
                 width: 100%;
-                padding: 8px;
+                padding: 10px;
                 font-size: 13px;
             }
             
@@ -380,67 +400,52 @@
             
             .filter-group label {
                 font-size: 11px;
-                min-width: 70px;
+                min-width: 80px;
             }
             
             .filter-group select,
             .filter-group input {
                 flex: 1;
-                padding: 6px 8px;
+                padding: 8px;
                 font-size: 12px;
             }
             
-            #mainContainer {
-                height: calc(100vh - 120px);
-            }
-            
             #map {
-                min-height: 250px;
-            }
-            
-            .panel-section {
-                padding: 8px;
+                min-height: 70vh;
+                height: 70vh;
             }
             
             .panel-section h3 {
-                font-size: 0.85em;
+                font-size: 0.9em;
             }
             
             .earthquake-item {
-                padding: 6px;
-                margin: 5px 0;
+                padding: 8px;
+                margin: 6px 0;
             }
             
             .eq-magnitude {
-                font-size: 1.1em;
+                font-size: 1.2em;
             }
             
             .eq-location {
-                font-size: 0.75em;
+                font-size: 0.8em;
             }
             
             .eq-time {
-                font-size: 0.65em;
-            }
-            
-            .legend {
-                display: none;
+                font-size: 0.7em;
             }
             
             #autoRefresh {
-                top: 55px;
+                top: 60px;
                 right: 5px;
                 font-size: 8px;
-                padding: 4px 6px;
+                padding: 5px 8px;
             }
             
             .anomaly-alert {
-                padding: 8px 10px;
-                font-size: 0.75em;
-            }
-            
-            .checkbox-group label {
-                font-size: 11px;
+                padding: 10px 12px;
+                font-size: 0.8em;
             }
         }
         
@@ -450,23 +455,9 @@
                 font-size: 1em;
             }
             
-            #controls {
-                padding: 6px;
-            }
-            
-            .btn {
-                padding: 6px;
-                font-size: 11px;
-            }
-            
             .filter-group label {
                 font-size: 10px;
-                min-width: 60px;
-            }
-            
-            .filter-group select,
-            .filter-group input {
-                font-size: 11px;
+                min-width: 70px;
             }
         }
     </style>
@@ -481,7 +472,7 @@
         🎛️ Filtreler
     </button>
     
-    <div id="controls" class="collapsible-content collapsed">
+    <div id="controls" class="collapsible-content">
         <button class="btn" onclick="refreshData()">🔄 Yenile</button>
         
         <div class="filter-group">
@@ -527,9 +518,9 @@
                 📊 İstatistikler
             </button>
             
-            <div id="statsSection" class="panel-section collapsible-content collapsed">
+            <div id="statsSection" class="panel-section collapsible-content">
                 <h3>📊 İstatistikler</h3>
-                <div style="color: #9ca3af; font-size: 0.85em; line-height: 1.6;">
+                <div style="color: #9ca3af; font-size: 0.9em; line-height: 1.8;">
                     <div><strong>Toplam (24h):</strong> <span id="stat1">-</span></div>
                     <div><strong>En Büyük (24h):</strong> <span id="stat2">-</span></div>
                     <div><strong>Aktif Anomali:</strong> <span id="stat3">-</span></div>
@@ -541,7 +532,7 @@
                 🔴 En Büyük 5 Deprem
             </button>
             
-            <div id="topSection" class="panel-section collapsible-content collapsed">
+            <div id="topSection" class="panel-section collapsible-content">
                 <h3>🔴 En Büyük 5 Deprem</h3>
                 <div id="topEarthquakes">
                     <p style="color: #6b7280; font-size: 0.85em;">Yükleniyor...</p>
@@ -570,9 +561,11 @@
             
             if (panel.classList.contains('collapsed')) {
                 panel.classList.remove('collapsed');
+                panel.style.maxHeight = panel.scrollHeight + 'px';
                 button.classList.add('active');
             } else {
                 panel.classList.add('collapsed');
+                panel.style.maxHeight = '0';
                 button.classList.remove('active');
             }
         }
@@ -709,7 +702,7 @@
                 return `
                     <div class="earthquake-item ${magClass}" onclick="focusEarthquake(${eq.latitude}, ${eq.longitude})">
                         <div class="eq-magnitude">M${eq.magnitude.toFixed(1)}</div>
-                        <div class="eq-location">${eq.location.substring(0, 30)}...</div>
+                        <div class="eq-location">${eq.location.substring(0, 35)}...</div>
                         <div class="eq-time">${eqTime.toLocaleString('tr-TR')}</div>
                     </div>
                 `;
@@ -969,7 +962,7 @@
             alertDiv.innerHTML = `
                 <strong>⚠️ ${anomalies.length} Bölgede Anomali Tespit Edildi!</strong>
             `;
-            document.body.insertBefore(alertDiv, document.getElementById('header').nextSibling);
+            document.body.insertBefore(alertDiv, document.body.firstChild);
         }
         
         function refreshData() {
