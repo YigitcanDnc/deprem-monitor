@@ -107,7 +107,7 @@ class KandilliCollector:
                     depth=eq['depth'],
                     location=eq['location'],  # Artık düzgün Türkçe
                     source='Kandilli',
-                    geometry=f"POINT({eq['longitude']} {eq['latitude']})"
+                    # geometry=f"POINT({eq['longitude']} {eq['latitude']})" # KALDIRILDI
                 )
                 
                 db.add(earthquake)

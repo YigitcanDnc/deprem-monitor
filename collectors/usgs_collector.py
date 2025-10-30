@@ -99,7 +99,7 @@ class USGSCollector:
                     depth=coords[2] if len(coords) > 2 else 0,
                     location=props.get('place', 'Bilinmiyor'),
                     source='USGS',
-                    geometry=f'POINT({coords[0]} {coords[1]})'
+                    # geometry=f'POINT({coords[0]} {coords[1]})' # KALDIRILDI
                 )
                 
                 db.add(earthquake)
