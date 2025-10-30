@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import datetime, timedelta
-from database.models import Earthquake, SessionLocal
+from database.models import Earthquake, Anomaly, SessionLocal
 import os
 
 app = FastAPI(title="Deprem Takip Sistemi API")
@@ -81,98 +81,41 @@ async def get_earthquakes(
 
 @app.get("/api/anomalies")
 async def get_anomalies(db: Session = Depends(get_db)):
-    """Aktif anomalileri getir - Mevcut tablo yapısına göre"""
+    """Aktif anomalileri getir - YENİ MODEL"""
     
-    # SQL ile direkt çek (model uyumsuz olduğu için)
-    query = text("""
-        SELECT 
-            id, 
-            region, 
-            score, 
-            alert_level, 
-            anomaly_type,
-            description,
-            start_time,
-            is_resolved
-        FROM anomalies 
-        WHERE is_resolved = false
-        ORDER BY score DESC
-    """)
-    
-    result = db.execute(query).fetchall()
-    
-    # Bölge isimlerinden koordinat tahmini yap
-    def extract_coords_from_region(region_name):
-        """Bölge isminden yaklaşık koordinat çıkar"""
-        # Türkiye'nin bazı bölgeleri için sabit koordinatlar
-        regions = {
-            'KUTAHYA': (39.4242, 29.9833),
-            'KÜTAHYA': (39.4242, 29.9833),
-            'BALIKESIR': (39.6484, 27.8826),
-            'MANISA': (38.6191, 27.4289),
-            'MALATYA': (38.3552, 38.3095),
-            'ADANA': (37.0000, 35.3213),
-            'MUGLA': (37.2153, 28.3636),
-            'MUĞLA': (37.2153, 28.3636),
-            'IZMIR': (38.4237, 27.1428),
-            'İZMİR': (38.4237, 27.1428),
-            'HISARCIK': (39.2463, 29.2725),
-            'SIMAV': (39.0884, 28.9789),
-            'SINDIRGI': (39.2381, 28.1826),
-            'AKHISAR': (38.9185, 27.8339),
-            'YAZIHAN': (38.6167, 38.0167),
-            'PUTURGE': (38.2000, 38.9667),
-            'YESILYURT': (38.2783, 38.3304),
-            'FEKE': (37.8167, 35.9167),
-            'ULA': (37.1000, 28.4167),
-            'EMET': (39.3414, 29.2619),
-            'KALE': (38.4667, 38.9833),
-            'KOZAN': (37.4500, 35.8167),
-            'KOYCEGIZ': (36.9667, 28.6833),
-            'MARMARIS': (36.8547, 28.2744),
+    try:
+        # Yeni model yapısını kullan
+        anomalies = db.query(Anomaly).filter(Anomaly.is_active == True).all()
+        
+        return {
+            "count": len(anomalies),
+            "anomalies": [
+                {
+                    "id": a.id,
+                    "latitude": a.latitude,
+                    "longitude": a.longitude,
+                    "radius_km": a.radius_km,
+                    "z_score": a.z_score,
+                    "earthquake_count": a.earthquake_count,
+                    "baseline_rate": a.baseline_rate if a.baseline_rate else 0.0,
+                    "current_rate": a.current_rate if a.current_rate else 0.0,
+                    "location": a.location,
+                    "detected_at": a.detected_at.isoformat() if a.detected_at else datetime.now().isoformat(),
+                    "is_active": a.is_active,
+                    "alert_level": "red" if a.z_score > 5 else "orange" if a.z_score > 3 else "yellow",
+                    "anomaly_type": "frequency",
+                    "description": f"{a.earthquake_count} deprem tespit edildi - Z-score: {a.z_score:.1f}"
+                }
+                for a in anomalies
+            ]
         }
-        
-        if not region_name:
-            return (39.0, 35.0)
-        
-        region_upper = region_name.upper()
-        
-        # Bölge isminde şehir adı ara
-        for city, coords in regions.items():
-            if city in region_upper:
-                return coords
-        
-        # Bulunamazsa Türkiye merkezi
-        return (39.0, 35.0)
-    
-    anomalies = []
-    for row in result:
-        lat, lon = extract_coords_from_region(row[1])  # region
-        
-        # Yarıçapı score'a göre ayarla (daha büyük score = daha büyük alan)
-        radius = min(50.0 + (row[2] if row[2] else 0) * 0.5, 100.0)
-        
-        anomalies.append({
-            "id": row[0],
-            "latitude": lat,
-            "longitude": lon,
-            "radius_km": radius,
-            "z_score": row[2] if row[2] else 0.0,  # score
-            "earthquake_count": 0,  # Bilinmiyor
-            "baseline_rate": 0.0,
-            "current_rate": 0.0,
-            "location": row[1],  # region
-            "detected_at": row[6].isoformat() if row[6] else datetime.now().isoformat(),  # start_time
-            "is_active": not row[7] if row[7] is not None else True,  # is_resolved tersine
-            "alert_level": row[3] if row[3] else "orange",  # alert_level
-            "anomaly_type": row[4] if row[4] else "frequency",  # anomaly_type
-            "description": row[5] if row[5] else "Anomali tespit edildi"  # description
-        })
-    
-    return {
-        "count": len(anomalies),
-        "anomalies": anomalies
-    }
+    except Exception as e:
+        # Eğer anomalies tablosu boşsa veya yoksa
+        print(f"Anomaly query hatası: {e}")
+        return {
+            "count": 0,
+            "anomalies": []
+        }
 
 @app.get("/api/stats")
 async def get_stats(db: Session = Depends(get_db)):
@@ -186,9 +129,11 @@ async def get_stats(db: Session = Depends(get_db)):
         Earthquake.timestamp >= last_24h
     ).all()
     
-    # Aktif anomaliler (SQL ile)
-    active_anomalies_query = text("SELECT COUNT(*) FROM anomalies WHERE is_resolved = false")
-    active_anomalies = db.execute(active_anomalies_query).scalar()
+    # Aktif anomaliler - YENİ MODEL
+    try:
+        active_anomalies = db.query(Anomaly).filter(Anomaly.is_active == True).count()
+    except:
+        active_anomalies = 0
     
     # En büyük deprem
     max_magnitude = 0.0
@@ -198,7 +143,7 @@ async def get_stats(db: Session = Depends(get_db)):
     return {
         "total_24h": len(earthquakes_24h),
         "max_magnitude_24h": max_magnitude,
-        "active_anomalies": active_anomalies if active_anomalies else 0,
+        "active_anomalies": active_anomalies,
         "last_update": now.isoformat()
     }
 
