@@ -49,7 +49,7 @@ class Earthquake(Base):
     depth = Column(Float, nullable=False)
     location = Column(String, nullable=False)
     source = Column(String, nullable=False, index=True)
-    geometry = Column(Geometry('POINT', srid=4326))
+    # geometry = Column(Geometry('POINT', srid=4326)) # GEÇICI KAPALI
     created_at = Column(DateTime, default=datetime.utcnow)
 
 # Anomaly Model
