@@ -241,8 +241,62 @@
             50% { opacity: 0.85; }
         }
         
+        /* AÇILIR/KAPANIR PANEL BUTONLARI */
+        .panel-toggle {
+            display: none;
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            transition: all 0.3s;
+        }
+        
+        .panel-toggle:active {
+            background: #b91c1c;
+        }
+        
+        .panel-toggle::after {
+            content: '▼';
+            float: right;
+            transition: transform 0.3s;
+        }
+        
+        .panel-toggle.active::after {
+            transform: rotate(180deg);
+        }
+        
+        .collapsible-content {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .collapsible-content.collapsed {
+            max-height: 0;
+        }
+        
         /* MOBİL UYUMLULUK - TABLET */
         @media (max-width: 768px) {
+            .panel-toggle {
+                display: block;
+            }
+            
+            #controls {
+                padding-top: 5px;
+            }
+            
+            #leftPanel {
+                max-height: none;
+                height: auto;
+            }
+            
             #header h1 {
                 font-size: 1.3em;
             }
@@ -273,10 +327,6 @@
             .filter-group input {
                 padding: 5px 8px;
                 font-size: 12px;
-            }
-            
-            #leftPanel {
-                max-height: 160px;
             }
             
             .panel-section {
@@ -341,11 +391,7 @@
             }
             
             #mainContainer {
-                height: calc(100vh - 320px);
-            }
-            
-            #leftPanel {
-                max-height: 140px;
+                height: calc(100vh - 120px);
             }
             
             #map {
@@ -431,7 +477,11 @@
         <p>Türkiye ve Global Deprem Verileri - Gerçek Zamanlı İzleme</p>
     </div>
     
-    <div id="controls">
+    <button class="panel-toggle" onclick="togglePanel('controls')">
+        🎛️ Filtreler
+    </button>
+    
+    <div id="controls" class="collapsible-content collapsed">
         <button class="btn" onclick="refreshData()">🔄 Yenile</button>
         
         <div class="filter-group">
@@ -473,7 +523,11 @@
     
     <div id="mainContainer">
         <div id="leftPanel">
-            <div class="panel-section">
+            <button class="panel-toggle" onclick="togglePanel('statsSection')">
+                📊 İstatistikler
+            </button>
+            
+            <div id="statsSection" class="panel-section collapsible-content collapsed">
                 <h3>📊 İstatistikler</h3>
                 <div style="color: #9ca3af; font-size: 0.85em; line-height: 1.6;">
                     <div><strong>Toplam (24h):</strong> <span id="stat1">-</span></div>
@@ -483,7 +537,11 @@
                 </div>
             </div>
             
-            <div class="panel-section">
+            <button class="panel-toggle" onclick="togglePanel('topSection')">
+                🔴 En Büyük 5 Deprem
+            </button>
+            
+            <div id="topSection" class="panel-section collapsible-content collapsed">
                 <h3>🔴 En Büyük 5 Deprem</h3>
                 <div id="topEarthquakes">
                     <p style="color: #6b7280; font-size: 0.85em;">Yükleniyor...</p>
@@ -505,6 +563,19 @@
         let allEarthquakes = [];
         let anomalies = [];
         let autoRefreshInterval;
+        
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            const button = event.target;
+            
+            if (panel.classList.contains('collapsed')) {
+                panel.classList.remove('collapsed');
+                button.classList.add('active');
+            } else {
+                panel.classList.add('collapsed');
+                button.classList.remove('active');
+            }
+        }
         
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
@@ -825,7 +896,7 @@
                                 <strong style="color: #374151;">Score:</strong> <span style="color: #dc2626; font-weight: 700;">${anomaly.z_score.toFixed(1)}</span>
                             </p>
                             <p style="margin: 8px 0; font-size: 14px;">
-                                <strong style="color: #374151;">Tip:<strong style="color: #374151;">Tip:</strong> ${anomaly.anomaly_type}
+                                <strong style="color: #374151;">Tip:</strong> ${anomaly.anomaly_type}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px;">
                                 <strong style="color: #374151;">Durum:</strong> 
@@ -898,7 +969,7 @@
             alertDiv.innerHTML = `
                 <strong>⚠️ ${anomalies.length} Bölgede Anomali Tespit Edildi!</strong>
             `;
-            document.body.insertBefore(alertDiv, document.getElementById('controls'));
+            document.body.insertBefore(alertDiv, document.getElementById('header').nextSibling);
         }
         
         function refreshData() {
