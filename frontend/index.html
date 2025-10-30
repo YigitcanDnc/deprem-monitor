@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🌍 Deprem Takip Sistemi</title>
     <style>
         * {
@@ -20,14 +20,14 @@
         
         #header {
             background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             border-bottom: 3px solid #dc2626;
         }
         
         #header h1 {
-            font-size: 2em;
+            font-size: 1.5em;
             margin-bottom: 5px;
             color: #f3f4f6;
             font-weight: 700;
@@ -35,30 +35,32 @@
         
         #header p {
             opacity: 0.85;
-            font-size: 0.9em;
+            font-size: 0.8em;
             color: #d1d5db;
         }
         
         #controls {
             background: #161b22;
-            padding: 15px;
+            padding: 10px;
             display: flex;
-            gap: 15px;
+            gap: 8px;
             align-items: center;
             flex-wrap: wrap;
             border-bottom: 2px solid #30363d;
+            overflow-x: auto;
         }
         
         .btn {
             background: linear-gradient(135deg, #dc2626, #991b1b);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             transition: all 0.3s;
+            white-space: nowrap;
         }
         
         .btn:hover {
@@ -68,14 +70,15 @@
         
         .filter-group {
             display: flex;
-            gap: 10px;
+            gap: 5px;
             align-items: center;
         }
         
         .filter-group label {
-            font-size: 14px;
+            font-size: 12px;
             color: #d1d5db;
             font-weight: 500;
+            white-space: nowrap;
         }
         
         .filter-group select,
@@ -83,39 +86,42 @@
             background: #0d1117;
             color: #f3f4f6;
             border: 1.5px solid #30363d;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
         }
         
         #mainContainer {
             display: flex;
-            height: calc(100vh - 220px);
+            flex-direction: column;
+            height: calc(100vh - 160px);
         }
         
         #leftPanel {
-            width: 300px;
+            width: 100%;
+            max-height: 180px;
             background: #161b22;
-            border-right: 2px solid #30363d;
+            border-bottom: 2px solid #30363d;
             overflow-y: auto;
-            padding: 15px;
+            padding: 10px;
         }
         
         #map {
             flex: 1;
+            min-height: 300px;
         }
         
         .panel-section {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             background: #1f2937;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
             border: 1px solid #30363d;
         }
         
         .panel-section h3 {
-            font-size: 1em;
-            margin-bottom: 10px;
+            font-size: 0.9em;
+            margin-bottom: 8px;
             color: #f3f4f6;
             border-bottom: 2px solid #dc2626;
             padding-bottom: 5px;
@@ -123,8 +129,8 @@
         
         .earthquake-item {
             background: #0d1117;
-            padding: 10px;
-            margin: 8px 0;
+            padding: 8px;
+            margin: 6px 0;
             border-radius: 6px;
             border-left: 4px solid;
             cursor: pointer;
@@ -141,26 +147,26 @@
         .earthquake-item.mag-low { border-left-color: #eab308; }
         
         .eq-magnitude {
-            font-size: 1.4em;
+            font-size: 1.2em;
             font-weight: bold;
             color: #dc2626;
         }
         
         .eq-location {
-            font-size: 0.85em;
+            font-size: 0.8em;
             color: #9ca3af;
             margin-top: 3px;
         }
         
         .eq-time {
-            font-size: 0.75em;
+            font-size: 0.7em;
             color: #6b7280;
             margin-top: 3px;
         }
         
         .legend {
             background: rgba(22, 27, 34, 0.95);
-            padding: 15px;
+            padding: 12px;
             margin: 10px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
@@ -168,77 +174,66 @@
         }
         
         .legend h4 {
-            margin: 0 0 10px 0;
+            margin: 0 0 8px 0;
             color: #f3f4f6;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            margin: 6px 0;
-            font-size: 12px;
+            margin: 5px 0;
+            font-size: 11px;
             color: #c9d1d9;
         }
         
         .legend-color {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 6px;
             border: 2px solid #30363d;
         }
         
         .checkbox-group {
             display: flex;
             align-items: center;
-            margin: 10px 0;
+            margin: 0;
             cursor: pointer;
         }
         
         .checkbox-group input[type="checkbox"] {
-            margin-right: 8px;
+            margin-right: 5px;
             cursor: pointer;
         }
         
-        #timeline {
+        .checkbox-group label {
+            font-size: 12px;
+        }
+        
+        #autoRefresh {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #161b22;
-            padding: 15px;
-            border-top: 2px solid #30363d;
-            display: none;
-        }
-        
-        #timelineSlider {
-            width: 100%;
-            height: 40px;
-            -webkit-appearance: none;
-            background: #30363d;
-            border-radius: 5px;
-            outline: none;
-        }
-        
-        #timelineSlider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 40px;
-            background: #dc2626;
-            cursor: pointer;
-            border-radius: 5px;
+            top: 70px;
+            right: 10px;
+            background: #1f2937;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            font-size: 10px;
+            color: #22c55e;
+            z-index: 1000;
         }
         
         .anomaly-alert {
             background: linear-gradient(135deg, #dc2626, #991b1b);
             color: white;
-            padding: 15px 20px;
+            padding: 10px 15px;
             margin: 0;
             text-align: center;
             animation: pulse 2.5s infinite;
             border-bottom: 3px solid #7f1d1d;
+            font-size: 0.85em;
         }
         
         @keyframes pulse {
@@ -246,16 +241,187 @@
             50% { opacity: 0.85; }
         }
         
-        #autoRefresh {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            background: #1f2937;
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid #30363d;
-            font-size: 12px;
-            color: #22c55e;
+        /* MOBİL UYUMLULUK - TABLET */
+        @media (max-width: 768px) {
+            #header h1 {
+                font-size: 1.3em;
+            }
+            
+            #header p {
+                font-size: 0.75em;
+            }
+            
+            #controls {
+                padding: 8px;
+                gap: 6px;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .filter-group {
+                width: auto;
+            }
+            
+            .filter-group label {
+                font-size: 11px;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                padding: 5px 8px;
+                font-size: 12px;
+            }
+            
+            #leftPanel {
+                max-height: 160px;
+            }
+            
+            .panel-section {
+                padding: 8px;
+                margin-bottom: 10px;
+            }
+            
+            .earthquake-item {
+                padding: 6px;
+            }
+            
+            #autoRefresh {
+                top: 60px;
+                right: 8px;
+                font-size: 9px;
+                padding: 5px 8px;
+            }
+        }
+        
+        /* MOBİL UYUMLULUK - TELEFON */
+        @media (max-width: 480px) {
+            #header {
+                padding: 10px;
+            }
+            
+            #header h1 {
+                font-size: 1.1em;
+            }
+            
+            #header p {
+                font-size: 0.7em;
+            }
+            
+            #controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px;
+                padding: 8px;
+            }
+            
+            .btn {
+                width: 100%;
+                padding: 8px;
+                font-size: 13px;
+            }
+            
+            .filter-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .filter-group label {
+                font-size: 11px;
+                min-width: 70px;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                flex: 1;
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+            
+            #mainContainer {
+                height: calc(100vh - 320px);
+            }
+            
+            #leftPanel {
+                max-height: 140px;
+            }
+            
+            #map {
+                min-height: 250px;
+            }
+            
+            .panel-section {
+                padding: 8px;
+            }
+            
+            .panel-section h3 {
+                font-size: 0.85em;
+            }
+            
+            .earthquake-item {
+                padding: 6px;
+                margin: 5px 0;
+            }
+            
+            .eq-magnitude {
+                font-size: 1.1em;
+            }
+            
+            .eq-location {
+                font-size: 0.75em;
+            }
+            
+            .eq-time {
+                font-size: 0.65em;
+            }
+            
+            .legend {
+                display: none;
+            }
+            
+            #autoRefresh {
+                top: 55px;
+                right: 5px;
+                font-size: 8px;
+                padding: 4px 6px;
+            }
+            
+            .anomaly-alert {
+                padding: 8px 10px;
+                font-size: 0.75em;
+            }
+            
+            .checkbox-group label {
+                font-size: 11px;
+            }
+        }
+        
+        /* ÇOK KÜÇÜK EKRANLAR */
+        @media (max-width: 360px) {
+            #header h1 {
+                font-size: 1em;
+            }
+            
+            #controls {
+                padding: 6px;
+            }
+            
+            .btn {
+                padding: 6px;
+                font-size: 11px;
+            }
+            
+            .filter-group label {
+                font-size: 10px;
+                min-width: 60px;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                font-size: 11px;
+            }
         }
     </style>
 </head>
@@ -294,7 +460,7 @@
         <div class="filter-group">
             <label>Görünüm:</label>
             <select id="viewMode" onchange="changeViewMode()">
-                <option value="markers" selected>Renkli Noktalar</option>
+                <option value="markers" selected>Noktalar</option>
                 <option value="heatmap">Isı Haritası</option>
             </select>
         </div>
@@ -303,18 +469,13 @@
             <input type="checkbox" id="showFaults" onchange="toggleFaults()">
             <label for="showFaults">Fay Hatları</label>
         </div>
-        
-        <div class="checkbox-group">
-            <input type="checkbox" id="enableTimeline" onchange="toggleTimeline()">
-            <label for="enableTimeline">Zaman Çizelgesi</label>
-        </div>
     </div>
     
     <div id="mainContainer">
         <div id="leftPanel">
             <div class="panel-section">
                 <h3>📊 İstatistikler</h3>
-                <div style="color: #9ca3af; font-size: 0.9em; line-height: 1.6;">
+                <div style="color: #9ca3af; font-size: 0.85em; line-height: 1.6;">
                     <div><strong>Toplam (24h):</strong> <span id="stat1">-</span></div>
                     <div><strong>En Büyük (24h):</strong> <span id="stat2">-</span></div>
                     <div><strong>Aktif Anomali:</strong> <span id="stat3">-</span></div>
@@ -331,14 +492,6 @@
         </div>
         
         <div id="map"></div>
-    </div>
-    
-    <div id="timeline">
-        <div style="color: #c9d1d9; margin-bottom: 10px; display: flex; justify-content: space-between;">
-            <span id="timelineLabel">Zaman: -</span>
-            <button class="btn" onclick="playTimeline()" style="padding: 5px 15px;">▶ Oynat</button>
-        </div>
-        <input type="range" id="timelineSlider" min="0" max="100" value="100">
     </div>
     
     <div id="autoRefresh">● Otomatik Yenileme Aktif (5dk)</div>
@@ -404,28 +557,31 @@
                 ]
             });
             
-            const legend = document.createElement('div');
-            legend.className = 'legend';
-            legend.innerHTML = `
-                <h4>Deprem Büyüklüğü</h4>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #22c55e;"></div>
-                    <span>2.5 - 3.5</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #eab308;"></div>
-                    <span>3.5 - 4.5</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #f97316;"></div>
-                    <span>4.5 - 5.5</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #dc2626;"></div>
-                    <span>5.5+</span>
-                </div>
-            `;
-            map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
+            // Legend - sadece desktop'ta göster
+            if (window.innerWidth > 768) {
+                const legend = document.createElement('div');
+                legend.className = 'legend';
+                legend.innerHTML = `
+                    <h4>Deprem Büyüklüğü</h4>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #22c55e;"></div>
+                        <span>2.5 - 3.5</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #eab308;"></div>
+                        <span>3.5 - 4.5</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f97316;"></div>
+                        <span>4.5 - 5.5</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #dc2626;"></div>
+                        <span>5.5+</span>
+                    </div>
+                `;
+                map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
+            }
             
             loadData();
             startAutoRefresh();
@@ -450,7 +606,6 @@
                 document.getElementById('stat2').textContent = stats.max_magnitude_24h.toFixed(1);
                 document.getElementById('stat3').textContent = stats.active_anomalies;
                 const updateTime = new Date(stats.last_update);
-                updateTime.setHours(updateTime.getHours() + 3);
                 document.getElementById('stat4').textContent = updateTime.toLocaleTimeString('tr-TR');
                 
                 updateTopEarthquakes();
@@ -479,7 +634,6 @@
             container.innerHTML = sorted.map(eq => {
                 const magClass = eq.magnitude >= 5 ? 'mag-high' : eq.magnitude >= 4 ? 'mag-medium' : 'mag-low';
                 const eqTime = new Date(eq.timestamp);
-                eqTime.setHours(eqTime.getHours() + 3);
                 
                 return `
                     <div class="earthquake-item ${magClass}" onclick="focusEarthquake(${eq.latitude}, ${eq.longitude})">
@@ -549,7 +703,6 @@
                 });
                 
                 const eqTime = new Date(eq.timestamp);
-                eqTime.setHours(eqTime.getHours() + 3);
                 
                 const infoWindow = new google.maps.InfoWindow({
                     content: `
@@ -672,7 +825,7 @@
                                 <strong style="color: #374151;">Score:</strong> <span style="color: #dc2626; font-weight: 700;">${anomaly.z_score.toFixed(1)}</span>
                             </p>
                             <p style="margin: 8px 0; font-size: 14px;">
-                                <strong style="color: #374151;">Tip:</strong> ${anomaly.anomaly_type}
+                                <strong style="color: #374151;">Tip:<strong style="color: #374151;">Tip:</strong> ${anomaly.anomaly_type}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px;">
                                 <strong style="color: #374151;">Durum:</strong> 
@@ -699,8 +852,6 @@
                 anomalyCircles.push(outerCircle);
                 anomalyCircles.push(marker);
             });
-            
-            console.log(`${anomalies.length} anomali bölgesi çizildi`);
         }
         
         function toggleFaults() {
@@ -725,11 +876,6 @@
             } else {
                 faultLines.forEach(line => line.setMap(show ? map : null));
             }
-        }
-        
-        function toggleTimeline() {
-            const timeline = document.getElementById('timeline');
-            timeline.style.display = document.getElementById('enableTimeline').checked ? 'block' : 'none';
         }
         
         function changeViewMode() {
@@ -764,10 +910,6 @@
                 console.log('Otomatik yenileme...');
                 loadData();
             }, 5 * 60 * 1000);
-        }
-        
-        function playTimeline() {
-            alert('Timeline özelliği geliştirme aşamasında!');
         }
     </script>
     
