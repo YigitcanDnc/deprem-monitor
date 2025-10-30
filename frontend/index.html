@@ -268,13 +268,10 @@
             transform: rotate(180deg);
         }
         
+        /* MOBİL İÇİN COLLAPSIBLE İÇERİK */
         .collapsible-content {
             overflow: hidden;
             transition: max-height 0.3s ease-out;
-        }
-        
-        .collapsible-content.collapsed {
-            max-height: 0 !important;
         }
         
         /* MOBİL UYUMLULUK - TABLET */
@@ -294,8 +291,39 @@
                 overflow-y: auto;
             }
             
+            /* PANEL TOGGLE BUTONLARINI GÖSTER */
             .panel-toggle {
                 display: block;
+            }
+            
+            /* FİLTRELER MOBİLDE BAŞLANGIÇTA KAPALI */
+            #controls {
+                max-height: 0;
+                padding: 0;
+                border: none;
+            }
+            
+            #controls.expanded {
+                max-height: 500px;
+                padding: 8px;
+                border-bottom: 2px solid #30363d;
+            }
+            
+            /* İSTATİSTİKLER VE DEPREMLER MOBİLDE BAŞLANGIÇTA KAPALI */
+            .panel-section {
+                max-height: 0;
+                padding: 0;
+                margin: 0;
+                border: none;
+                opacity: 0;
+            }
+            
+            .panel-section.expanded {
+                max-height: 500px;
+                padding: 15px;
+                margin-bottom: 15px;
+                border: 1px solid #30363d;
+                opacity: 1;
             }
             
             #header h1 {
@@ -304,11 +332,6 @@
             
             #header p {
                 font-size: 0.8em;
-            }
-            
-            #controls {
-                padding: 8px;
-                gap: 6px;
             }
             
             #mainContainer {
@@ -345,11 +368,6 @@
                 font-size: 12px;
             }
             
-            .panel-section {
-                padding: 10px;
-                margin-bottom: 10px;
-            }
-            
             .earthquake-item {
                 padding: 8px;
             }
@@ -380,7 +398,7 @@
                 font-size: 0.7em;
             }
             
-            #controls {
+            #controls.expanded {
                 flex-direction: column;
                 align-items: stretch;
                 gap: 6px;
@@ -415,7 +433,7 @@
                 height: 70vh;
             }
             
-            .panel-section h3 {
+            .panel-section.expanded h3 {
                 font-size: 0.9em;
             }
             
@@ -472,7 +490,7 @@
         🎛️ Filtreler
     </button>
     
-    <div id="controls" class="collapsible-content">
+    <div id="controls">
         <button class="btn" onclick="refreshData()">🔄 Yenile</button>
         
         <div class="filter-group">
@@ -518,7 +536,7 @@
                 📊 İstatistikler
             </button>
             
-            <div id="statsSection" class="panel-section collapsible-content">
+            <div id="statsSection" class="panel-section">
                 <h3>📊 İstatistikler</h3>
                 <div style="color: #9ca3af; font-size: 0.9em; line-height: 1.8;">
                     <div><strong>Toplam (24h):</strong> <span id="stat1">-</span></div>
@@ -532,7 +550,7 @@
                 🔴 En Büyük 5 Deprem
             </button>
             
-            <div id="topSection" class="panel-section collapsible-content">
+            <div id="topSection" class="panel-section">
                 <h3>🔴 En Büyük 5 Deprem</h3>
                 <div id="topEarthquakes">
                     <p style="color: #6b7280; font-size: 0.85em;">Yükleniyor...</p>
@@ -557,16 +575,23 @@
         
         function togglePanel(panelId) {
             const panel = document.getElementById(panelId);
-            const button = event.target;
             
-            if (panel.classList.contains('collapsed')) {
-                panel.classList.remove('collapsed');
-                panel.style.maxHeight = panel.scrollHeight + 'px';
-                button.classList.add('active');
-            } else {
-                panel.classList.add('collapsed');
-                panel.style.maxHeight = '0';
-                button.classList.remove('active');
+            if (window.innerWidth <= 768) {
+                // Mobilde toggle
+                if (panel.classList.contains('expanded')) {
+                    panel.classList.remove('expanded');
+                } else {
+                    panel.classList.add('expanded');
+                }
+                
+                // Buton animasyonu
+                const buttons = document.querySelectorAll('.panel-toggle');
+                buttons.forEach(btn => {
+                    const nextElement = btn.nextElementSibling;
+                    if (nextElement && nextElement.id === panelId) {
+                        btn.classList.toggle('active');
+                    }
+                });
             }
         }
         
@@ -835,7 +860,7 @@
             anomalies.forEach(anomaly => {
                 const center = { lat: anomaly.latitude, lng: anomaly.longitude };
                 
-                const circle = new google.maps.Circle({
+                const circle =new google.maps.Circle({
                     strokeColor: '#dc2626',
                     strokeOpacity: 0.4,
                     strokeWeight: 2,
