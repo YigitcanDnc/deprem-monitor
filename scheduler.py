@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from schedulers.daily_report import send_daily_report
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger  # ← EKSİK IMPORT
 from datetime import datetime
 import time
 
@@ -74,17 +75,15 @@ def start_scheduler():
         name='Veri Toplama',
         replace_existing=True
     )
-
+    
     # Günlük rapor - Her gün saat 22:00'da
-scheduler.add_job(
-    send_daily_report,
-    CronTrigger(hour=22, minute=0),
-    id='daily_report',
-    name='Günlük Deprem Raporu',
-    replace_existing=True
-)
-
-print("   📧 Günlük Rapor: Her gün 22:00'da")
+    scheduler.add_job(
+        func=send_daily_report,
+        trigger=CronTrigger(hour=22, minute=0),
+        id='daily_report',
+        name='Günlük Deprem Raporu',
+        replace_existing=True
+    )
     
     # Her 30 dakikada bir anomali analizi yap
     scheduler.add_job(
@@ -103,6 +102,7 @@ print("   📧 Günlük Rapor: Her gün 22:00'da")
     print("\n📋 Çalışma Programı:")
     print("   🔄 Veri Toplama: Her 15 dakikada bir")
     print("   🧠 Anomali Analizi: Her 30 dakikada bir")
+    print("   📧 Günlük Rapor: Her gün 22:00'da")
     print("\n💡 Sistemi durdurmak için CTRL+C basın\n")
     
     # İlk çalıştırmayı hemen yap
