@@ -3,6 +3,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
+from schedulers.daily_report import send_daily_report
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from datetime import datetime
@@ -73,6 +74,17 @@ def start_scheduler():
         name='Veri Toplama',
         replace_existing=True
     )
+
+    # Günlük rapor - Her gün saat 22:00'da
+scheduler.add_job(
+    send_daily_report,
+    CronTrigger(hour=22, minute=0),
+    id='daily_report',
+    name='Günlük Deprem Raporu',
+    replace_existing=True
+)
+
+print("   📧 Günlük Rapor: Her gün 22:00'da")
     
     # Her 30 dakikada bir anomali analizi yap
     scheduler.add_job(
