@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from database.models import Earthquake, Anomaly, SessionLocal
 import os
 
@@ -28,6 +28,12 @@ def get_db():
     finally:
         db.close()
 
+# Türkiye saati helper
+def get_turkey_time():
+    """Türkiye saatini döndür (UTC+3)"""
+    turkey_tz = timezone(timedelta(hours=3))
+    return datetime.now(timezone.utc).astimezone(turkey_tz)
+
 # Static files ve frontend
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
@@ -46,8 +52,8 @@ async def get_earthquakes(
 ):
     """Deprem verilerini getir"""
     
-    # Zaman filtresi
-    start_time = datetime.now() - timedelta(hours=hours)
+    # Zaman filtresi (UTC)
+    start_time = datetime.now(timezone.utc) - timedelta(hours=hours)
     
     # Query oluştur
     query = db.query(Earthquake).filter(
@@ -100,7 +106,7 @@ async def get_anomalies(db: Session = Depends(get_db)):
                     "baseline_rate": a.baseline_rate if a.baseline_rate else 0.0,
                     "current_rate": a.current_rate if a.current_rate else 0.0,
                     "location": a.location,
-                    "detected_at": a.detected_at.isoformat() if a.detected_at else datetime.now().isoformat(),
+                    "detected_at": a.detected_at.isoformat() if a.detected_at else get_turkey_time().isoformat(),
                     "is_active": a.is_active,
                     "alert_level": "red" if a.z_score > 5 else "orange" if a.z_score > 3 else "yellow",
                     "anomaly_type": "frequency",
@@ -119,14 +125,18 @@ async def get_anomalies(db: Session = Depends(get_db)):
 
 @app.get("/api/stats")
 async def get_stats(db: Session = Depends(get_db)):
-    """Genel istatistikler"""
+    """Genel istatistikler - Türkiye saati ile"""
     
-    now = datetime.now()
-    last_24h = now - timedelta(hours=24)
+    # UTC'de son 24 saat
+    now_utc = datetime.now(timezone.utc)
+    last_24h_utc = now_utc - timedelta(hours=24)
     
-    # Son 24 saatteki depremler
+    # Türkiye saati
+    now_turkey = get_turkey_time()
+    
+    # Son 24 saatteki depremler (UTC karşılaştırması)
     earthquakes_24h = db.query(Earthquake).filter(
-        Earthquake.timestamp >= last_24h
+        Earthquake.timestamp >= last_24h_utc
     ).all()
     
     # Aktif anomaliler - YENİ MODEL
@@ -144,7 +154,7 @@ async def get_stats(db: Session = Depends(get_db)):
         "total_24h": len(earthquakes_24h),
         "max_magnitude_24h": max_magnitude,
         "active_anomalies": active_anomalies,
-        "last_update": now.isoformat()
+        "last_update": now_turkey.isoformat()  # ← Türkiye saati
     }
 
 @app.get("/api/earthquake/{earthquake_id}")
@@ -178,7 +188,7 @@ async def get_region_stats(
 ):
     """Belirli bir bölgenin istatistikleri"""
     
-    start_time = datetime.now() - timedelta(hours=hours)
+    start_time = datetime.now(timezone.utc) - timedelta(hours=hours)
     
     # Basit mesafe hesabı (yaklaşık)
     lat_range = radius_km / 111  # 1 derece ~ 111km
@@ -218,7 +228,7 @@ async def health_check():
     """Sistem sağlık kontrolü"""
     return {
         "status": "healthy",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": get_turkey_time().isoformat()
     }
 
 if __name__ == "__main__":

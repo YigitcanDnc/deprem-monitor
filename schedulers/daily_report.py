@@ -3,13 +3,19 @@
 Günlük Deprem Raporu - Her gün saat 22:00'da email gönderir
 """
 import os
+import sys
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import and_
-from database.models import Earthquake, Anomaly, SessionLocal
 from dotenv import load_dotenv
+
+# PYTHON PATH DÜZELTMESİ - Proje root'unu ekle
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Şimdi import edebiliriz
+from database.models import Earthquake, Anomaly, SessionLocal
 
 load_dotenv()
 
@@ -124,7 +130,7 @@ def create_html_report(stats):
             <li>
                 <strong>{anomaly.location}</strong> - 
                 Z-Score: {anomaly.z_score:.1f} - 
-                <span style='color: #dc2626; font-weight: bold;'>{anomaly.alert_level.upper()}</span>
+                <span style='color: #dc2626; font-weight: bold;'>{"RED" if anomaly.z_score > 5 else "ORANGE" if anomaly.z_score > 3 else "YELLOW"}</span>
             </li>
             """
         anomalies_html += "</ul>"
@@ -137,10 +143,10 @@ def create_html_report(stats):
     regions_html += "</ol>"
     
     trend_html = "<table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>"
-    for day in stats['trend_data']:
+    for idx, day in enumerate(stats['trend_data']):
         trend_arrow = ""
-        if day != stats['trend_data'][0]:
-            prev_count = stats['trend_data'][stats['trend_data'].index(day) - 1]['count']
+        if idx > 0:
+            prev_count = stats['trend_data'][idx - 1]['count']
             if day['count'] > prev_count:
                 trend_arrow = "↗️"
             elif day['count'] < prev_count:
