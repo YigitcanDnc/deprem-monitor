@@ -1,0 +1,71 @@
+# -*- coding: utf-8 -*-
+"""
+Anomalies tablosuna latitude ve longitude kolonları ekle
+"""
+import os
+from sqlalchemy import text, create_engine
+
+# Database URL'i al
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    print("❌ DATABASE_URL bulunamadı!")
+    exit(1)
+
+# PostgreSQL bağlantısı
+engine = create_engine(DATABASE_URL)
+
+def migrate():
+    """Anomalies tablosunu güncelle"""
+    
+    print("\n" + "="*60)
+    print("🔧 DATABASE MİGRATİON BAŞLIYOR")
+    print("="*60)
+    
+    with engine.connect() as conn:
+        try:
+            # Mevcut kolonları kontrol et
+            print("\n1️⃣ Mevcut tablo yapısı kontrol ediliyor...")
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'anomalies'
+            """))
+            existing_columns = [row[0] for row in result]
+            print(f"   ✅ Mevcut kolonlar: {', '.join(existing_columns)}")
+            
+            # Kolonları ekle
+            columns_to_add = [
+                ('latitude', 'FLOAT'),
+                ('longitude', 'FLOAT'),
+                ('radius_km', 'FLOAT DEFAULT 50.0'),
+                ('earthquake_count', 'INTEGER DEFAULT 0'),
+                ('baseline_rate', 'FLOAT DEFAULT 0.0'),
+                ('current_rate', 'FLOAT DEFAULT 0.0'),
+                ('resolved_at', 'TIMESTAMP')
+            ]
+            
+            for col_name, col_type in columns_to_add:
+                if col_name not in existing_columns:
+                    print(f"\n✅ '{col_name}' kolonu ekleniyor...")
+                    conn.execute(text(f"""
+                        ALTER TABLE anomalies 
+                        ADD COLUMN {col_name} {col_type}
+                    """))
+                    conn.commit()
+                    print(f"   ✅ '{col_name}' eklendi")
+                else:
+                    print(f"\n✓ '{col_name}' zaten mevcut")
+            
+            print("\n" + "="*60)
+            print("✅ MİGRATİON BAŞARIYLA TAMAMLANDI!")
+            print("="*60 + "\n")
+            
+        except Exception as e:
+            print(f"\n❌ Migration hatası: {e}")
+            import traceback
+            traceback.print_exc()
+            conn.rollback()
+            exit(1)
+
+if __name__ == "__main__":
+    migrate()

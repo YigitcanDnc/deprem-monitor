@@ -1,0 +1,16 @@
+[[services]]
+name = "web"
+startCommand = "python -c \"from database.models import init_db; init_db()\" && uvicorn api:app --host 0.0.0.0 --port $PORT"
+
+[[services]]
+name = "scheduler"
+startCommand = "python scheduler.py"
+[[services]]
+name = "web"
+startCommand = "python -c \"from database.models import init_db; init_db()\" && uvicorn api:app --host 0.0.0.0 --port $PORT"
+
+[[services]]
+name = "scheduler"
+startCommand = "python scheduler.py"
+
+
