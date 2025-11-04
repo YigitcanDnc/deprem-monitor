@@ -694,8 +694,12 @@
                 document.getElementById('stat1').textContent = stats.total_24h;
                 document.getElementById('stat2').textContent = stats.max_magnitude_24h.toFixed(1);
                 document.getElementById('stat3').textContent = stats.active_anomalies;
-                const updateTime = new Date(stats.last_update);
-                document.getElementById('stat4').textContent = updateTime.toLocaleTimeString('tr-TR');
+                // API'den gelen saat zaten Türkiye saati (UTC+3)
+document.getElementById('stat4').textContent = new Date(stats.last_update).toLocaleTimeString('tr-TR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+});
                 
                 updateTopEarthquakes();
                 
