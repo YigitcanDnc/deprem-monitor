@@ -225,14 +225,6 @@
             border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
-        .legend-star {
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
         /* Alert Banner */
         .alert-banner {
             position: absolute;
@@ -345,7 +337,7 @@
 
     <!-- Alert Banner -->
     <div class="alert-banner" id="alertBanner">
-        ⚠️ <span id="alertText">134 Bölgede Anomali Tespit Edildi!</span>
+        ⚠️ <span id="alertText">Anomali Tespit Edildi!</span>
     </div>
 
     <!-- Panel Toggle Button -->
@@ -444,7 +436,7 @@
             <span>5.5+</span>
         </div>
         <div class="legend-item">
-            <div class="legend-star">⭐</div>
+            <span style="font-size: 16px;">⭐</span>
             <span>Anomali Merkezi</span>
         </div>
     </div>
@@ -458,7 +450,6 @@
         let markers = [];
         let anomalyMarkers = [];
         let anomalyCircles = [];
-        let faultLines = [];
 
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
@@ -650,12 +641,12 @@
             anomalyMarkers = [];
             anomalyCircles = [];
             
-            // Yeni anomalileri ekle
+            // Yeni anomalileri ekle - YILDIZ SİMGESİ İLE
             data.anomalies.forEach(anomaly => {
                 const color = anomaly.alert_level === 'red' ? '#dc2626' : 
                               anomaly.alert_level === 'orange' ? '#ea580c' : '#eab308';
                 
-                // Yıldız simgesi
+                // Yıldız simgesi SVG path
                 const starPath = 'M 0,-8 L 2.4,-2.4 L 8.7,-2.4 L 3.6,1.4 L 5.5,7.6 L 0,3.6 L -5.5,7.6 L -3.6,1.4 L -8.7,-2.4 L -2.4,-2.4 Z';
                 
                 const starIcon = {
@@ -750,15 +741,10 @@
                         "geometry": {
                             "type": "MultiLineString",
                             "coordinates": [
-                                // Gediz Grabeni
                                 [[26.50, 38.80], [27.50, 38.75], [28.50, 38.70], [29.20, 38.65]],
-                                // Büyük Menderes Grabeni
                                 [[27.00, 37.80], [28.00, 37.75], [29.00, 37.70], [29.80, 37.65]],
-                                // Küçük Menderes Grabeni
                                 [[27.20, 37.95], [27.80, 37.90], [28.40, 37.85]],
-                                // Simav Grabeni
                                 [[28.80, 39.10], [29.20, 39.05], [29.60, 39.00]],
-                                // Alaşehir Grabeni
                                 [[28.20, 38.45], [28.60, 38.40], [29.00, 38.35]]
                             ]
                         }
@@ -795,8 +781,7 @@
             map.data.addListener('click', event => {
                 const name = event.feature.getProperty('name');
                 const infoWindow = new google.maps.InfoWindow({
-                    content: `
-                        <div style="color: #0d1117; padding: 8px;">
+                    content: `<div style="color: #0d1117; padding: 8px;">
                             <h3 style="margin: 0 0 8px 0; color: #dc2626;">🔴 ${name}</h3>
                             <p style="margin: 4px 0; font-size: 12px;">Aktif tektonik hat</p>
                         </div>
@@ -823,10 +808,10 @@
         }
 
         function getMagnitudeColor(magnitude) {
-            if (magnitude >= 5.5) return '#dc2626';      // Kırmızı
-            if (magnitude >= 4.5) return '#f97316';      // Turuncu
-            if (magnitude >= 3.5) return '#eab308';      // Sarı
-            return '#22c55e';                             // Yeşil
+            if (magnitude >= 5.5) return '#dc2626';
+            if (magnitude >= 4.5) return '#f97316';
+            if (magnitude >= 3.5) return '#eab308';
+            return '#22c55e';
         }
 
         function getMagnitudeSize(magnitude) {
@@ -844,10 +829,8 @@
             const mode = document.getElementById('viewMode').value;
             
             if (mode === 'heatmap') {
-                // Marker'ları gizle
                 markers.forEach(marker => marker.setVisible(false));
                 
-                // Heatmap oluştur
                 if (!heatmap) {
                     const heatmapData = markers.map(marker => marker.getPosition());
                     heatmap = new google.maps.visualization.HeatmapLayer({
@@ -858,10 +841,8 @@
                 }
                 heatmap.setMap(map);
             } else {
-                // Marker'ları göster
                 markers.forEach(marker => marker.setVisible(true));
                 
-                // Heatmap'i gizle
                 if (heatmap) {
                     heatmap.setMap(null);
                 }
@@ -880,15 +861,10 @@
                 button.style.left = '20px';
             }
         }
-
-        // Otomatik yenileme - her 5 dakikada bir
-        setInterval(() => {
-            loadData();
-        }, 300000);
     </script>
 
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBXRK2bLQlV5rZzaLKlQ3mKvhPGS1JXHHI&callback=initMap&libraries=visualization">
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBXRK2bLQlV5rZzaLKlQ3mKvhPGS1JXHII&callback=initMap&libraries=visualization">
     </script>
 </body>
 </html>
