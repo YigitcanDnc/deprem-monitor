@@ -95,24 +95,31 @@ def get_daily_stats(days_back=0):
             print(f"⚠️ Anomali sorgusu hatası: {e}")
             active_anomalies = []
         
-        # Bölgesel dağılım (şehir bazlı) - TEMİZLEME EKLE
+        # Bölgesel dağılım (şehir bazlı) - GELİŞTİRİLMİŞ PARSE
         regional_counts = {}
         for eq in earthquakes_today:
-            # Şehir adını çıkar ve temizle
-            location = eq.location
-            
-            # "İlksel" ve "Revize" kelimelerini kaldır
-            location = location.replace('İlksel', '').replace('Revize', '').strip()
-            
-            if '(' in location:
+            # Lokasyonu temizle
+            location = eq.location.replace('İlksel', '').replace('Revize', '').strip()
+    
+            # Şehir çıkarma mantığı
+            city = None
+    
+            # 1. Önce parantez içini kontrol et
+            if '(' in location and ')' in location:
                 city = location.split('(')[-1].replace(')', '').strip()
+                # 2. Parantez yoksa, tire sonrasını al
+            elif '-' in location:
+                parts = location.split('-')
+                city = parts[-1].strip()
+                # 3. Hiçbiri yoksa tüm metni al (Kıbrıs gibi)
             else:
-                city = location.split('-')[-1].strip() if '-' in location else 'Diğer'
-            
+                city = location.strip()
+    
             # Son temizlik
-            city = city.replace('İlksel', '').replace('Revize', '').strip()
-            
-            regional_counts[city] = regional_counts.get(city, 0) + 1
+            if city:
+                city = city.replace('İlksel', '').replace('Revize', '').strip()
+            if city:  # Boş değilse
+                regional_counts[city] = regional_counts.get(city, 0) + 1
         
         # En aktif 5 bölge
         top_regions = sorted(regional_counts.items(), key=lambda x: x[1], reverse=True)[:5]
