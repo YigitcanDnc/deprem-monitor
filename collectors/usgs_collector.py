@@ -1,137 +1,152 @@
+# -*- coding: utf-8 -*-
 import sys
 import os
-
-# Proje kök dizinini Python path'ine ekle
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import requests
-from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
+from datetime import datetime, timedelta, timezone
 from database.models import Earthquake, SessionLocal
-
-import requests
-from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from database.models import Earthquake, SessionLocal
+import hashlib
 
 class USGSCollector:
-    """USGS (Amerika Jeoloji Kurumu) deprem verilerini toplar"""
-    
     def __init__(self):
         self.base_url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
+        self.source = "USGS"
+        
+        # Türkiye sınırları (yaklaşık)
+        self.min_latitude = 36.0
+        self.max_latitude = 42.0
+        self.min_longitude = 26.0
+        self.max_longitude = 45.0
     
-    def fetch_recent_earthquakes(self, days=7, min_magnitude=2.5, max_results=1000):
+    def generate_event_id(self, timestamp, lat, lon, magnitude):
         """
-        Son X günün depremlerini çek
-        
-        Args:
-            days: Kaç gün geriye git
-            min_magnitude: Minimum büyüklük
-            max_results: Maksimum sonuç sayısı
+        Timestamp, konum ve büyüklükten benzersiz ID oluştur
+        Kandilli ile aynı mantık
         """
-        end_time = datetime.utcnow()
-        start_time = end_time - timedelta(days=days)
-        
-        params = {
-            'format': 'geojson',
-            'starttime': start_time.strftime('%Y-%m-%d'),
-            'endtime': end_time.strftime('%Y-%m-%d'),
-            'minmagnitude': min_magnitude,
-            'limit': max_results,
-            'orderby': 'time-asc'
-        }
+        unique_string = f"usgs-{timestamp}-{lat:.3f}-{lon:.3f}-{magnitude:.1f}"
+        return hashlib.md5(unique_string.encode()).hexdigest()[:16]
+    
+    def collect(self, days=7, min_magnitude=2.5):
+        """USGS'den veri topla"""
+        print("\n" + "="*50)
+        print("🚀 USGS Deprem Verisi Toplama Başladı")
+        print("="*50)
         
         try:
-            print(f"🌍 USGS'den veri çekiliyor...")
+            # Tarih aralığı
+            end_time = datetime.now(timezone.utc)
+            start_time = end_time - timedelta(days=days)
+            
+            print("🌍 USGS'den veri çekiliyor...")
             print(f"   📅 Tarih aralığı: {start_time.strftime('%Y-%m-%d')} - {end_time.strftime('%Y-%m-%d')}")
             print(f"   📊 Min. büyüklük: {min_magnitude}")
             
+            # API parametreleri
+            params = {
+                'format': 'geojson',
+                'starttime': start_time.isoformat(),
+                'endtime': end_time.isoformat(),
+                'minlatitude': self.min_latitude,
+                'maxlatitude': self.max_latitude,
+                'minlongitude': self.min_longitude,
+                'maxlongitude': self.max_longitude,
+                'minmagnitude': min_magnitude,
+                'orderby': 'time-asc'
+            }
+            
+            # API isteği
             response = requests.get(self.base_url, params=params, timeout=30)
             response.raise_for_status()
             
             data = response.json()
-            earthquakes = data.get('features', [])
+            features = data.get('features', [])
+            
+            earthquakes = []
+            
+            for feature in features:
+                try:
+                    props = feature['properties']
+                    coords = feature['geometry']['coordinates']
+                    
+                    # Timestamp (milisaniye)
+                    timestamp_ms = props['time']
+                    dt_utc = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
+                    
+                    # Koordinatlar
+                    lat = coords[1]
+                    lon = coords[0]
+                    depth = coords[2]
+                    magnitude = props['mag']
+                    
+                    # Event ID oluştur (timestamp + konum + büyüklük)
+                    event_id = self.generate_event_id(dt_utc, lat, lon, magnitude)
+                    
+                    earthquake = {
+                        'event_id': event_id,
+                        'timestamp': dt_utc,
+                        'latitude': lat,
+                        'longitude': lon,
+                        'depth': depth,
+                        'magnitude': magnitude,
+                        'location': props.get('place', 'Unknown'),
+                        'source': self.source
+                    }
+                    
+                    earthquakes.append(earthquake)
+                    
+                except (KeyError, ValueError, IndexError) as e:
+                    continue
             
             print(f"✅ {len(earthquakes)} deprem verisi alındı")
+            
+            # Veritabanına kaydet
+            self.save_to_database(earthquakes)
+            
+            print("="*50 + "\n")
+            
             return earthquakes
             
-        except requests.exceptions.Timeout:
-            print("❌ USGS zaman aşımı - sunucu yanıt vermiyor")
-            return []
-        except requests.exceptions.RequestException as e:
-            print(f"❌ USGS bağlantı hatası: {e}")
-            return []
         except Exception as e:
-            print(f"❌ Beklenmeyen hata: {e}")
+            print(f"❌ USGS veri toplama hatası: {e}")
+            print("="*50 + "\n")
             return []
     
     def save_to_database(self, earthquakes):
         """Depremleri veritabanına kaydet"""
         db = SessionLocal()
-        saved_count = 0
-        skipped_count = 0
         
         try:
-            for eq in earthquakes:
-                props = eq['properties']
-                coords = eq['geometry']['coordinates']
-                
-                # Bazı depremlerde magnitude null olabiliyor
-                if props.get('mag') is None:
-                    skipped_count += 1
-                    continue
-                
-                event_id = f"usgs_{eq['id']}"
-                
-                # Zaten var mı kontrol et
-                existing = db.query(Earthquake).filter_by(event_id=event_id).first()
-                if existing:
-                    skipped_count += 1
-                    continue
-                
-                # Yeni deprem kaydı oluştur
-                earthquake = Earthquake(
-                    event_id=event_id,
-                    timestamp=datetime.fromtimestamp(props['time'] / 1000),
-                    latitude=coords[1],
-                    longitude=coords[0],
-                    magnitude=props['mag'],
-                    depth=coords[2] if len(coords) > 2 else 0,
-                    location=props.get('place', 'Bilinmiyor'),
-                    source='USGS',
-                    # geometry=f'POINT({coords[0]} {coords[1]})' # KALDIRILDI
-                )
-                
-                db.add(earthquake)
-                saved_count += 1
+            new_count = 0
+            existing_count = 0
             
+            for eq_data in earthquakes:
+                # Event ID ile kontrol et
+                existing = db.query(Earthquake).filter(
+                    Earthquake.event_id == eq_data['event_id']
+                ).first()
+                
+                if not existing:
+                    # Yeni deprem ekle
+                    earthquake = Earthquake(**eq_data)
+                    db.add(earthquake)
+                    new_count += 1
+                else:
+                    existing_count += 1
+            
+            # Commit
             db.commit()
-            print(f"💾 Veritabanına kaydedildi:")
-            print(f"   ✅ {saved_count} yeni deprem")
-            print(f"   ⏭️  {skipped_count} zaten mevcut")
+            
+            print("💾 Veritabanına kaydedildi:")
+            print(f"   ✅ {new_count} yeni deprem")
+            print(f"   ⏭️  {existing_count} zaten mevcut")
             
         except Exception as e:
+            print(f"❌ Veritabanı kayıt hatası: {e}")
             db.rollback()
-            print(f"❌ Veritabanına kaydetme hatası: {e}")
         finally:
             db.close()
-    
-    def collect(self, days=7, min_magnitude=2.5):
-        """Ana toplama fonksiyonu"""
-        print("\n" + "="*50)
-        print("🚀 USGS Deprem Verisi Toplama Başladı")
-        print("="*50)
-        
-        earthquakes = self.fetch_recent_earthquakes(days=days, min_magnitude=min_magnitude)
-        
-        if earthquakes:
-            self.save_to_database(earthquakes)
-        else:
-            print("⚠️  Kaydedilecek veri yok")
-        
-        print("="*50 + "\n")
-
 
 if __name__ == "__main__":
     collector = USGSCollector()
-    collector.collect(days=7, min_magnitude=2.5)
+    collector.collect(days=14, min_magnitude=2.5)
