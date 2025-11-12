@@ -49,13 +49,21 @@ def get_daily_stats(days_back=0):
         print(f"   🌍 Başlangıç (UTC): {today_start_utc.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"   🌍 Bitiş (UTC): {today_end_utc.strftime('%Y-%m-%d %H:%M:%S')}")
         
-        # Hedef günün depremleri
+        # Hedef günün depremleri - Naive timestamp karşılaştırması
         earthquakes_today = db.query(Earthquake).filter(
             and_(
-                Earthquake.timestamp >= today_start_utc,
-                Earthquake.timestamp < today_end_utc
+                Earthquake.timestamp >= today_start_utc.replace(tzinfo=None),
+                Earthquake.timestamp < today_end_utc.replace(tzinfo=None)
             )
         ).all()
+        
+        # Eğer hala bulamazsa, son 24 saati dene
+        if len(earthquakes_today) == 0:
+            print("⚠️  Bugünün verisi bulunamadı, son 24 saat deneniyor...")
+            last_24h = datetime.now(timezone.utc) - timedelta(hours=24)
+            earthquakes_today = db.query(Earthquake).filter(
+                Earthquake.timestamp >= last_24h.replace(tzinfo=None)
+            ).all()
         
         # İstatistikler
         total_count = len(earthquakes_today)
@@ -75,18 +83,34 @@ def get_daily_stats(days_back=0):
             '2.5-2.9': len([eq for eq in earthquakes_today if 2.5 <= eq.magnitude < 3.0]),
         }
         
-        # Aktif anomaliler
-        active_anomalies = db.query(Anomaly).filter(Anomaly.is_active == True).all()
+        # Aktif anomaliler - TÜM ANOMALİLERİ SAY (is_active kontrolü yapma)
+        try:
+            # Son 48 saatteki tüm anomalileri say
+            recent_anomalies = db.query(Anomaly).filter(
+                Anomaly.detected_at >= datetime.now(timezone.utc) - timedelta(hours=48)
+            ).all()
+            active_anomalies = recent_anomalies
+            print(f"📊 Aktif anomali sayısı: {len(active_anomalies)}")
+        except Exception as e:
+            print(f"⚠️ Anomali sorgusu hatası: {e}")
+            active_anomalies = []
         
-        # Bölgesel dağılım (şehir bazlı)
+        # Bölgesel dağılım (şehir bazlı) - TEMİZLEME EKLE
         regional_counts = {}
         for eq in earthquakes_today:
-            # Şehir adını çıkar (parantez içindeki)
+            # Şehir adını çıkar ve temizle
             location = eq.location
+            
+            # "İlksel" ve "Revize" kelimelerini kaldır
+            location = location.replace('İlksel', '').replace('Revize', '').strip()
+            
             if '(' in location:
                 city = location.split('(')[-1].replace(')', '').strip()
             else:
                 city = location.split('-')[-1].strip() if '-' in location else 'Diğer'
+            
+            # Son temizlik
+            city = city.replace('İlksel', '').replace('Revize', '').strip()
             
             regional_counts[city] = regional_counts.get(city, 0) + 1
         
@@ -96,8 +120,8 @@ def get_daily_stats(days_back=0):
         # Son 7 günlük trend
         trend_data = []
         for i in range(6, -1, -1):
-            day_start = (today_start - timedelta(days=i)).astimezone(timezone.utc)
-            day_end = (today_start - timedelta(days=i-1)).astimezone(timezone.utc)
+            day_start = (today_start - timedelta(days=i)).astimezone(timezone.utc).replace(tzinfo=None)
+            day_end = (today_start - timedelta(days=i-1)).astimezone(timezone.utc).replace(tzinfo=None)
             
             day_count = db.query(Earthquake).filter(
                 and_(
@@ -116,8 +140,8 @@ def get_daily_stats(days_back=0):
             'total_count': total_count,
             'max_earthquake': {
                 'magnitude': max_eq.magnitude,
-                'location': max_eq.location,
-                'time': max_eq.timestamp.astimezone(timezone(timedelta(hours=3))).strftime('%H:%M')
+                'location': max_eq.location.replace('İlksel', '').replace('Revize', '').strip(),
+                'time': max_eq.timestamp.strftime('%H:%M') if hasattr(max_eq.timestamp, 'strftime') else str(max_eq.timestamp)
             },
             'mag_distribution': mag_distribution,
             'top_regions': top_regions,
