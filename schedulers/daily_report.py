@@ -24,23 +24,43 @@ def get_turkey_time():
     turkey_tz = timezone(timedelta(hours=3))
     return datetime.now(timezone.utc).astimezone(turkey_tz)
 
-def get_daily_stats():
-    """Bugünün deprem istatistiklerini hesapla"""
+def get_daily_stats(days_back=0):
+    """
+    Belirtilen gün öncesinin deprem istatistiklerini hesapla
+    days_back=0: Bugün
+    days_back=1: Dün
+    """
     db = SessionLocal()
     
     try:
-        # Türkiye saati ile bugünün başlangıcı (00:00)
+        # Türkiye saati ile hedef günün başlangıcı (00:00)
         turkey_now = get_turkey_time()
-        today_start = turkey_now.replace(hour=0, minute=0, second=0, microsecond=0)
-        today_start_utc = today_start.astimezone(timezone.utc)
+        target_day = turkey_now - timedelta(days=days_back)
+        today_start = target_day.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
         
-        # Bugünün depremleri
+        # UTC'ye çevir
+        today_start_utc = today_start.astimezone(timezone.utc)
+        today_end_utc = today_end.astimezone(timezone.utc)
+        
+        print(f"\n🔍 Tarih Aralığı:")
+        print(f"   📅 Başlangıç (TR): {today_start.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"   📅 Bitiş (TR): {today_end.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"   🌍 Başlangıç (UTC): {today_start_utc.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"   🌍 Bitiş (UTC): {today_end_utc.strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        # Hedef günün depremleri
         earthquakes_today = db.query(Earthquake).filter(
-            Earthquake.timestamp >= today_start_utc
+            and_(
+                Earthquake.timestamp >= today_start_utc,
+                Earthquake.timestamp < today_end_utc
+            )
         ).all()
         
         # İstatistikler
         total_count = len(earthquakes_today)
+        
+        print(f"\n📊 Bulunan deprem sayısı: {total_count}")
         
         if total_count == 0:
             return None
@@ -92,12 +112,12 @@ def get_daily_stats():
             })
         
         return {
-            'date': turkey_now.strftime('%d %B %Y'),
+            'date': target_day.strftime('%d %B %Y'),
             'total_count': total_count,
             'max_earthquake': {
                 'magnitude': max_eq.magnitude,
                 'location': max_eq.location,
-                'time': max_eq.timestamp.strftime('%H:%M')
+                'time': max_eq.timestamp.astimezone(timezone(timedelta(hours=3))).strftime('%H:%M')
             },
             'mag_distribution': mag_distribution,
             'top_regions': top_regions,
@@ -105,6 +125,11 @@ def get_daily_stats():
             'trend_data': trend_data
         }
         
+    except Exception as e:
+        print(f"❌ İstatistik hesaplama hatası: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
     finally:
         db.close()
 
@@ -117,6 +142,9 @@ def create_html_report(stats):
             <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 20px;">
                 <h2 style="color: #dc2626;">📊 Günlük Deprem Raporu</h2>
                 <p>Bugün herhangi bir deprem kaydı bulunmamaktadır.</p>
+                <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                    Not: Eğer bu mesajı sürekli alıyorsanız, veri toplama sistemini kontrol edin.
+                </p>
             </div>
         </body>
         </html>
@@ -126,11 +154,12 @@ def create_html_report(stats):
     if stats['active_anomalies']:
         anomalies_html = "<h3 style='color: #dc2626;'>🚨 Aktif Anomaliler</h3><ul>"
         for anomaly in stats['active_anomalies'][:5]:
+            alert_level = "RED" if anomaly.z_score > 5 else "ORANGE" if anomaly.z_score > 3 else "YELLOW"
             anomalies_html += f"""
             <li>
                 <strong>{anomaly.location}</strong> - 
                 Z-Score: {anomaly.z_score:.1f} - 
-                <span style='color: #dc2626; font-weight: bold;'>{"RED" if anomaly.z_score > 5 else "ORANGE" if anomaly.z_score > 3 else "YELLOW"}</span>
+                <span style='color: #dc2626; font-weight: bold;'>{alert_level}</span>
             </li>
             """
         anomalies_html += "</ul>"
@@ -185,7 +214,7 @@ def create_html_report(stats):
                 <h3 style="margin-top: 0;">📊 Özet İstatistikler</h3>
                 <p><strong>Toplam Deprem:</strong> <span class="highlight">{stats['total_count']}</span></p>
                 <p><strong>En Büyük:</strong> M{stats['max_earthquake']['magnitude']:.1f} - {stats['max_earthquake']['location']}</p>
-                <p><strong>Saat:</strong> {stats['max_earthquake']['time']}</p>
+                <p><strong>Saat:</strong> {stats['max_earthquake']['time']} (Türkiye Saati)</p>
                 <p><strong>Aktif Anomali:</strong> {len(stats['active_anomalies'])} bölge</p>
             </div>
             
@@ -224,12 +253,21 @@ def send_daily_report():
     print("="*60)
     
     try:
-        # İstatistikleri hesapla
-        stats = get_daily_stats()
+        # İstatistikleri hesapla (bugün)
+        stats = get_daily_stats(days_back=0)
         
         if not stats:
-            print("⚠️  Bugün deprem verisi yok, rapor gönderilmedi.")
-            return
+            print("⚠️  Bugün deprem verisi yok.")
+            
+            # Dün veri var mı kontrol et
+            print("\n🔍 Dünün verisi kontrol ediliyor...")
+            stats = get_daily_stats(days_back=1)
+            
+            if not stats:
+                print("⚠️  Dün de veri yok, rapor gönderilmedi.")
+                return
+            else:
+                print("✅ Dünün verisi bulundu, onunla rapor gönderiliyor...")
         
         # HTML rapor oluştur
         html_content = create_html_report(stats)
@@ -240,6 +278,10 @@ def send_daily_report():
         smtp_username = os.getenv('SMTP_USERNAME')
         smtp_password = os.getenv('SMTP_PASSWORD')
         alert_email = os.getenv('ALERT_EMAIL')
+        
+        if not all([smtp_server, smtp_port, smtp_username, smtp_password, alert_email]):
+            print("❌ SMTP ayarları eksik!")
+            return
         
         # Email mesajı oluştur
         msg = MIMEMultipart('alternative')
@@ -255,13 +297,13 @@ def send_daily_report():
             server.login(smtp_username, smtp_password)
             server.send_message(msg)
         
-        print(f"✅ Günlük rapor gönderildi: {alert_email}")
+        print(f"\n✅ Günlük rapor gönderildi: {alert_email}")
         print(f"📊 Toplam deprem: {stats['total_count']}")
         print(f"📈 En büyük: M{stats['max_earthquake']['magnitude']:.1f}")
         print("="*60 + "\n")
         
     except Exception as e:
-        print(f"❌ Günlük rapor gönderme hatası: {e}")
+        print(f"\n❌ Günlük rapor gönderme hatası: {e}")
         import traceback
         traceback.print_exc()
 
