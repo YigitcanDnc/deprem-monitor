@@ -1,71 +1,84 @@
 # -*- coding: utf-8 -*-
+"""
+Anomali Tespit Modülü
+- Frekans bazlı anomali tespiti (Z-score)
+- Magnitüd artış tespiti
+"""
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from datetime import datetime, timedelta, timezone
+from database.models import Earthquake, Anomaly, SessionLocal
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
-from sqlalchemy import and_, func
-from database.models import Earthquake, Anomaly, SessionLocal
-from sklearn.preprocessing import StandardScaler
+from sqlalchemy import and_
 
 class AnomalyDetector:
-    """Deprem anomalilerini tespit eder"""
-    
     def __init__(self):
         self.db = SessionLocal()
-        self.grid_size = 50  # km - her bir grid hücresinin boyutu
-        self.time_window = 48  # saat - anomali tespit penceresi
-        self.baseline_days = 90  # gün - normal davranışı öğrenmek için
+        self.grid_size = 0.45  # ~50km grid
     
-    def __del__(self):
-        self.db.close()
+    def analyze(self):
+        """Tüm anomali analizlerini çalıştır"""
+        print("\n" + "="*60)
+        print("🧠 ANOMALİ TESPİT ANALİZİ BAŞLADI")
+        print("="*60 + "\n")
+        
+        all_anomalies = []
+        
+        # 1. Frekans anomalisi
+        freq_anomalies = self.detect_frequency_anomaly()
+        all_anomalies.extend(freq_anomalies)
+        
+        # 2. Magnitüd artış anomalisi
+        mag_anomalies = self.detect_magnitude_escalation()
+        all_anomalies.extend(mag_anomalies)
+        
+        # Anomalileri kaydet
+        if all_anomalies:
+            self.save_anomalies(all_anomalies)
+        
+        print(f"\n🎯 Toplam {len(all_anomalies)} anomali tespit edildi!")
+        print("="*60 + "\n")
+        
+        return all_anomalies
     
     def get_recent_earthquakes(self, hours=48):
-        """Son X saatteki depremleri al"""
-        cutoff = datetime.utcnow() - timedelta(hours=hours)
-        
-        earthquakes = self.db.query(Earthquake).filter(
-            Earthquake.timestamp >= cutoff
+        """Son X saatteki depremleri getir"""
+        time_threshold = datetime.now(timezone.utc) - timedelta(hours=hours)
+        return self.db.query(Earthquake).filter(
+            Earthquake.timestamp >= time_threshold.replace(tzinfo=None)
         ).all()
-        
-        return earthquakes
     
     def get_baseline_earthquakes(self, days=90):
-        """Baseline (normal davranış) için eski depremleri al"""
-        end_date = datetime.utcnow() - timedelta(hours=self.time_window)
-        start_date = end_date - timedelta(days=days)
+        """Baseline için geçmiş depremleri getir (son 48 saat hariç)"""
+        end_time = datetime.now(timezone.utc) - timedelta(hours=48)
+        start_time = end_time - timedelta(days=days)
         
-        earthquakes = self.db.query(Earthquake).filter(
+        return self.db.query(Earthquake).filter(
             and_(
-                Earthquake.timestamp >= start_date,
-                Earthquake.timestamp <= end_date
+                Earthquake.timestamp >= start_time.replace(tzinfo=None),
+                Earthquake.timestamp <= end_time.replace(tzinfo=None)
             )
         ).all()
-        
-        return earthquakes
     
     def create_grid(self, earthquakes):
-        """Depremleri grid hücrelerine böl"""
+        """Depremleri grid'lere böl"""
         if not earthquakes:
             return {}
         
-        # DataFrame'e çevir
-        data = [{
+        # DataFrame oluştur
+        df = pd.DataFrame([{
             'lat': eq.latitude,
             'lon': eq.longitude,
             'mag': eq.magnitude,
-            'depth': eq.depth,
-            'timestamp': eq.timestamp,
             'location': eq.location
-        } for eq in earthquakes]
+        } for eq in earthquakes])
         
-        df = pd.DataFrame(data)
-        
-        # Grid hücresi atama (yaklaşık 50km x 50km)
-        df['grid_lat'] = (df['lat'] / 0.45).round() * 0.45  # ~50km enlem
-        df['grid_lon'] = (df['lon'] / 0.45).round() * 0.45  # ~50km boylam
+        # Grid koordinatları
+        df['grid_lat'] = (df['lat'] / self.grid_size).round() * self.grid_size
+        df['grid_lon'] = (df['lon'] / self.grid_size).round() * self.grid_size
         df['grid_id'] = df['grid_lat'].astype(str) + '_' + df['grid_lon'].astype(str)
         
         # Grid'lere göre grupla
@@ -75,7 +88,6 @@ class AnomalyDetector:
                 'center_lat': group['grid_lat'].iloc[0],
                 'center_lon': group['grid_lon'].iloc[0],
                 'count': len(group),
-                'earthquakes': group.to_dict('records'),
                 'avg_magnitude': group['mag'].mean(),
                 'max_magnitude': group['mag'].max(),
                 'location': group['location'].iloc[0]
@@ -83,236 +95,172 @@ class AnomalyDetector:
         
         return grids
     
-    def clean_location(self, location):
-        """Konum adını temizle - sadece ana bölge adını al"""
-        if not location:
-            return "Bilinmiyor"
-        
-        # "Yüksel" kelimesini kaldır
-        location = location.replace(' Yüksel', '').replace(' Yuksel', '').replace(' Yiksel', '').replace(' Ýlksel', '')
-        
-        # Parantez içindeki kısmı al (şehir adı)
-        if '(' in location:
-            # "KAVAKCALI-ULA (MUGLA) Yüksel" -> "KAVAKCALI-ULA (MUGLA)"
-            location = location.split(')')[0] + ')'
-        
-        return location.strip()
-    
     def detect_frequency_anomaly(self):
-        """Frekans anomalisi tespit et (Yöntem 1)"""
-        print("\n🔍 Frekans Anomalisi Analizi...")
+        """Frekans bazlı anomali tespiti"""
+        print("🔍 Frekans Anomalisi Analizi...")
         
-        # Son 48 saat ve baseline verilerini al
-        recent = self.get_recent_earthquakes(hours=self.time_window)
-        baseline = self.get_baseline_earthquakes(days=self.baseline_days)
+        # Son 48 saat
+        recent_earthquakes = self.get_recent_earthquakes(hours=48)
+        print(f"   📊 Son 48 saat: {len(recent_earthquakes)} deprem")
         
-        if len(baseline) < 10:
-            print("⚠️  Yeterli baseline verisi yok (min 10 deprem gerekli)")
+        # Baseline (90 gün)
+        baseline_earthquakes = self.get_baseline_earthquakes(days=90)
+        print(f"   📊 Baseline (90 gün): {len(baseline_earthquakes)} deprem")
+        
+        if len(baseline_earthquakes) < 10:
+            print("   ⚠️  Yeterli baseline verisi yok\n")
             return []
         
-        print(f"   📊 Son {self.time_window} saat: {len(recent)} deprem")
-        print(f"   📊 Baseline ({self.baseline_days} gün): {len(baseline)} deprem")
-        
         # Grid'lere böl
-        recent_grids = self.create_grid(recent)
-        baseline_grids = self.create_grid(baseline)
+        recent_grids = self.create_grid(recent_earthquakes)
+        baseline_grids = self.create_grid(baseline_earthquakes)
         
         anomalies = []
         
         for grid_id, recent_data in recent_grids.items():
             recent_count = recent_data['count']
             
-            # Baseline'daki aynı grid
-            baseline_data = baseline_grids.get(grid_id, {'count': 0})
-            baseline_count = baseline_data['count']
+            # Baseline'daki sayı
+            baseline_count = baseline_grids.get(grid_id, {'count': 0})['count']
             
-            # Baseline'dan günlük ortalama hesapla
-            baseline_avg_per_window = (baseline_count / self.baseline_days) * (self.time_window / 24)
-            
-            if baseline_avg_per_window == 0:
-                baseline_avg_per_window = 0.5  # Sıfır bölme hatası
+            # Günlük ortalamayı 48 saate çevir
+            baseline_avg = (baseline_count / 90) * 2
             
             # Z-score hesapla
-            if baseline_avg_per_window > 0:
-                z_score = (recent_count - baseline_avg_per_window) / np.sqrt(baseline_avg_per_window)
+            if baseline_avg > 0:
+                z_score = (recent_count - baseline_avg) / np.sqrt(baseline_avg)
             else:
-                z_score = 0
+                z_score = recent_count  # Yeni bölge
             
-            # Anomali tespit et (z-score > 2.5)
+            # Anomali kontrolü
             if z_score > 2.5 and recent_count >= 5:
-                alert_level = 'yellow' if z_score < 3.5 else 'orange' if z_score < 5 else 'red'
-                
-                # Konum adını temizle
-                clean_location = self.clean_location(recent_data['location'])
-                
-                anomalies.append({
-                    'type': 'frequency',
-                    'grid_id': grid_id,
-                    'location': clean_location,
-                    'center_lat': recent_data['center_lat'],
-                    'center_lon': recent_data['center_lon'],
-                    'recent_count': recent_count,
-                    'baseline_avg': baseline_avg_per_window,
-                    'z_score': z_score,
-                    'alert_level': alert_level,
-                    'max_magnitude': recent_data['max_magnitude']
-                })
+                alert_level = 'red' if z_score > 5 else 'orange' if z_score > 3.5 else 'yellow'
                 
                 print(f"\n   🚨 Anomali tespit edildi!")
-                print(f"      📍 Konum: {clean_location}")
-                print(f"      📊 Son {self.time_window}h: {recent_count} deprem")
-                print(f"      📊 Normal: ~{baseline_avg_per_window:.1f} deprem")
+                print(f"      📍 Konum: {recent_data['location']}")
+                print(f"      📊 Son 48h: {recent_count} deprem")
+                print(f"      📊 Normal: ~{baseline_avg:.1f} deprem")
                 print(f"      📈 Z-score: {z_score:.2f}")
                 print(f"      🔴 Seviye: {alert_level.upper()}")
+                
+                anomalies.append({
+                    'latitude': recent_data['center_lat'],
+                    'longitude': recent_data['center_lon'],
+                    'radius_km': 50.0,
+                    'z_score': z_score,
+                    'earthquake_count': recent_count,
+                    'baseline_rate': baseline_avg,
+                    'current_rate': recent_count,
+                    'location': recent_data['location'],
+                    'is_active': True,
+                    'detected_at': datetime.now(timezone.utc),
+                    'alert_level': alert_level,
+                    'anomaly_type': 'frequency',
+                    'description': f"{recent_count} deprem tespit edildi - Z-score: {z_score:.1f}"
+                })
         
         return anomalies
     
     def detect_magnitude_escalation(self):
-        """Magnitüd kademeli artış tespit et (Yöntem 2)"""
+        """Magnitüd artış anomalisi"""
         print("\n🔍 Magnitüd Kademeli Artış Analizi...")
         
-        recent = self.get_recent_earthquakes(hours=self.time_window)
+        # Son 48 saat
+        recent_earthquakes = self.get_recent_earthquakes(hours=48)
         
-        if len(recent) < 5:
-            print("   ⚠️  Yeterli veri yok (min 5 deprem)")
+        if len(recent_earthquakes) < 5:
             return []
         
         # Grid'lere böl
-        grids = self.create_grid(recent)
+        grids = self.create_grid(recent_earthquakes)
         
         anomalies = []
         
-        for grid_id, data in grids.items():
-            if data['count'] < 5:
+        for grid_id, grid_data in grids.items():
+            if grid_data['count'] < 5:
                 continue
             
-            # Depremleri zamana göre sırala
-            eqs = sorted(data['earthquakes'], key=lambda x: x['timestamp'])
-            magnitudes = [eq['mag'] for eq in eqs]
+            # Bu grid'deki depremleri al
+            grid_earthquakes = [eq for eq in recent_earthquakes 
+                              if abs(eq.latitude - grid_data['center_lat']) < self.grid_size/2
+                              and abs(eq.longitude - grid_data['center_lon']) < self.grid_size/2]
             
-            # Son 5 depremde kademeli artış var mı?
-            last_5 = magnitudes[-5:]
+            # Zamana göre sırala
+            grid_earthquakes.sort(key=lambda x: x.timestamp)
             
-            # Trend kontrolü
-            increasing = sum([last_5[i] > last_5[i-1] for i in range(1, 5)])
-            
-            # Veya son deprem, önceki ortalamanın üstünde mi?
-            avg_before_last = np.mean(magnitudes[:-1])
-            last_mag = magnitudes[-1]
-            
-            if increasing >= 3 or (last_mag > avg_before_last + 0.5):
-                alert_level = 'orange' if last_mag < 4.0 else 'red'
+            # Son 3 depremin ortalaması
+            if len(grid_earthquakes) >= 3:
+                last_3_avg = np.mean([eq.magnitude for eq in grid_earthquakes[-3:]])
+                prev_avg = np.mean([eq.magnitude for eq in grid_earthquakes[:-3]]) if len(grid_earthquakes) > 3 else 0
                 
-                # Konum adını temizle
-                clean_location = self.clean_location(data['location'])
-                
-                anomalies.append({
-                    'type': 'magnitude_escalation',
-                    'grid_id': grid_id,
-                    'location': clean_location,
-                    'center_lat': data['center_lat'],
-                    'center_lon': data['center_lon'],
-                    'count': data['count'],
-                    'last_magnitude': last_mag,
-                    'avg_magnitude': avg_before_last,
-                    'trend': 'increasing',
-                    'alert_level': alert_level,
-                    'max_magnitude': last_mag
-                })
-                
-                print(f"\n   🚨 Magnitüd artışı tespit edildi!")
-                print(f"      📍 Konum: {clean_location}")
-                print(f"      📊 Deprem sayısı: {data['count']}")
-                print(f"      📈 Son mag: {last_mag:.1f}")
-                print(f"      📉 Önceki ort: {avg_before_last:.1f}")
-                print(f"      🔴 Seviye: {alert_level.upper()}")
+                # Artış var mı?
+                if last_3_avg > prev_avg + 0.5 and last_3_avg >= 3.0:
+                    print(f"\n   🚨 Magnitüd artışı tespit edildi!")
+                    print(f"      📍 Konum: {grid_data['location']}")
+                    print(f"      📊 Deprem sayısı: {len(grid_earthquakes)}")
+                    print(f"      📈 Son mag: {last_3_avg:.1f}")
+                    print(f"      📉 Önceki ort: {prev_avg:.1f}")
+                    print(f"      🔴 Seviye: ORANGE")
+                    
+                    anomalies.append({
+                        'latitude': grid_data['center_lat'],
+                        'longitude': grid_data['center_lon'],
+                        'radius_km': 50.0,
+                        'z_score': (last_3_avg - prev_avg) * 2,  # Yaklaşık skor
+                        'earthquake_count': len(grid_earthquakes),
+                        'baseline_rate': prev_avg,
+                        'current_rate': last_3_avg,
+                        'location': grid_data['location'],
+                        'is_active': True,
+                        'detected_at': datetime.now(timezone.utc),
+                        'alert_level': 'orange',
+                        'anomaly_type': 'magnitude_escalation',
+                        'description': f"Magnitüd artışı: {prev_avg:.1f} → {last_3_avg:.1f}"
+                    })
         
         return anomalies
     
     def save_anomalies(self, anomalies):
-        """Anomalileri veritabanına kaydet - YENİ MODEL UYUMLU"""
-        if not anomalies:
-            return
-        
-        saved_count = 0
-        
-        for anomaly in anomalies:
-            try:
-                # Aynı bölgede aktif anomali var mı kontrol et
+        """Anomalileri veritabanına kaydet - Gruplandırma ile"""
+        try:
+            new_count = 0
+            
+            for anomaly_data in anomalies:
+                location = anomaly_data['location']
+                
+                # Aynı konumda aktif anomali var mı kontrol et
                 existing = self.db.query(Anomaly).filter(
-                    and_(
-                        Anomaly.location == anomaly['location'],
-                        Anomaly.is_active == True
-                    )
+                    Anomaly.location == location,
+                    Anomaly.is_active == True
                 ).first()
                 
                 if existing:
                     # Mevcut anomaliyi güncelle
-                    existing.z_score = anomaly.get('z_score', anomaly.get('last_magnitude', 0))
-                    existing.earthquake_count = anomaly.get('recent_count', anomaly.get('count', 0))
-                    existing.current_rate = anomaly.get('recent_count', 0)
+                    existing.z_score = anomaly_data['z_score']
+                    existing.earthquake_count = anomaly_data['earthquake_count']
+                    existing.current_rate = anomaly_data['current_rate']
+                    existing.detected_at = datetime.now(timezone.utc)
                 else:
-                    # Yeni anomali kaydet - YENİ MODEL YAPISI
-                    new_anomaly = Anomaly(
-                        latitude=anomaly['center_lat'],
-                        longitude=anomaly['center_lon'],
-                        radius_km=50.0,
-                        z_score=anomaly.get('z_score', anomaly.get('last_magnitude', 0)),
-                        earthquake_count=anomaly.get('recent_count', anomaly.get('count', 0)),
-                        baseline_rate=anomaly.get('baseline_avg', 0),
-                        current_rate=anomaly.get('recent_count', 0),
-                        location=anomaly['location'],
-                        is_active=True,
-                        detected_at=datetime.utcnow()
-                    )
-                    
-                    self.db.add(new_anomaly)
-                    saved_count += 1
-                
-                self.db.commit()
-                
-            except Exception as e:
-                print(f"⚠️  Anomali kaydetme hatası: {e}")
-                self.db.rollback()
-                continue
-        
-        if saved_count > 0:
-            print(f"\n💾 {saved_count} yeni anomali kaydedildi")
-    
-    def analyze(self):
-        """Tüm analizleri çalıştır"""
-        print("\n" + "="*60)
-        print("🧠 ANOMALİ TESPİT ANALİZİ BAŞLADI")
-        print("="*60)
-        
-        all_anomalies = []
-        
-        try:
-            # 1. Frekans anomalisi
-            freq_anomalies = self.detect_frequency_anomaly()
-            all_anomalies.extend(freq_anomalies)
+                    # Yeni anomali ekle
+                    anomaly = Anomaly(**anomaly_data)
+                    self.db.add(anomaly)
+                    new_count += 1
             
-            # 2. Magnitüd artışı
-            mag_anomalies = self.detect_magnitude_escalation()
-            all_anomalies.extend(mag_anomalies)
+            self.db.commit()
+            print(f"\n💾 {new_count} yeni anomali kaydedildi")
             
-            # Anomalileri kaydet
-            if all_anomalies:
-                self.save_anomalies(all_anomalies)
-                print(f"\n🎯 Toplam {len(all_anomalies)} anomali tespit edildi!")
-            else:
-                print("\n✅ Anomali tespit edilmedi - her şey normal görünüyor")
-        
         except Exception as e:
-            print(f"❌ Anomali analizi hatası: {e}")
+            print(f"\n⚠️  Anomali kaydetme hatası: {e}")
             import traceback
             traceback.print_exc()
-        
-        print("="*60 + "\n")
-        
-        return all_anomalies
-
+            self.db.rollback()
+    
+    def __del__(self):
+        """Destructor - DB bağlantısını kapat"""
+        if hasattr(self, 'db'):
+            self.db.close()
 
 if __name__ == "__main__":
     detector = AnomalyDetector()
-    detector.analyze()
+    anomalies = detector.analyze()
+    print(f"\n✅ {len(anomalies)} anomali tespit edildi!")
