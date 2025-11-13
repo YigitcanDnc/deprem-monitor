@@ -519,6 +519,11 @@
             <input type="checkbox" id="showFaults" onchange="toggleFaults()">
             <label for="showFaults">Fay Hatları</label>
         </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" id="showPlates" onchange="togglePlates()">
+            <label for="showPlates">Tektonik Plakalar</label>
+        </div>
     </div>
     
     <div id="mainContainer">
@@ -563,6 +568,7 @@
         let anomalies = [];
         let autoRefreshInterval;
         let faultLinesLoaded = false;
+        let tectonicPlatesLoaded = false;
         
         function togglePanel(panelId) {
             const panel = document.getElementById(panelId);
@@ -596,7 +602,7 @@
                     {
                         featureType: "administrative.country",
                         elementType: "geometry.stroke",
-                        stylers: [{ color: "#fbbf24" }, { weight: 2 }]
+                        stylers: [{ color: "#4a5568" }, { weight: 2 }]
                     },
                     {
                         featureType: "administrative.province",
@@ -863,15 +869,15 @@
                     clickable: true
                 });
                 
-                const outerCircle = new google.maps.Circle({
-                    strokeColor: '#f97316',
+                const outerCircle = new google.maps.Circle({strokeColor: '#f97316',
                     strokeOpacity: 0.25,
                     strokeWeight: 1,
                     fillColor: '#f97316',
                     fillOpacity: 0.05,
                     map: map,
                     center: center,
-                    radius: anomaly.radius_km * 1500,});
+                    radius: anomaly.radius_km * 1500,
+                });
                 
                 const marker = new google.maps.Marker({
                     position: center,
@@ -934,75 +940,22 @@
         }
         
         function loadFaultLines() {
-            console.log('🗺️ Fay hatları ve tektonik plakalar yükleniyor...');
+            console.log('🗺️ Fay hatları yükleniyor...');
             
             const faultLinesData = {
                 "type": "FeatureCollection",
                 "features": [
                     {
                         "type": "Feature",
-                        "properties": { "name": "Avrasya-Afrika Plaka Sınırı", "color": "#fbbf24", "weight": 2.5, "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [-10.00, 36.00], [-5.00, 36.00], [0.00, 36.50], [5.00, 37.00], 
-                                [10.00, 37.50], [15.00, 38.00], [20.00, 38.50], [25.00, 39.00], 
-                                [30.00, 39.50], [35.00, 39.00], [40.00, 38.50], [45.00, 38.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Avrasya-Arap Plaka Sınırı", "color": "#fbbf24", "weight": 2.5, "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [35.00, 37.00], [37.00, 37.50], [39.00, 38.00], [41.00, 38.50],
-                                [43.00, 39.00], [45.00, 39.50], [47.00, 40.00], [49.00, 40.50]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Afrika-Arap Plaka Sınırı (Kızıldeniz)", "color": "#fbbf24", "weight": 2.5, "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [32.00, 22.00], [34.00, 24.00], [36.00, 26.00], [38.00, 28.00],
-                                [40.00, 30.00], [42.00, 32.00], [43.00, 33.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "KAFZ - Batı Segment", "color": "#fb923c", "weight": 2, "type": "major" },
+                        "properties": { "name": "Kuzey Anadolu Fay Hattı", "color": "#d4c5a9", "weight": 1.5 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
                                 [26.00, 40.90], [26.50, 40.85], [27.00, 40.80], [27.50, 40.75],
                                 [28.00, 40.72], [28.50, 40.69], [29.00, 40.66], [29.50, 40.63],
-                                [30.00, 40.60], [30.50, 40.58]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "KAFZ - Orta Segment", "color": "#fb923c", "weight": 2, "type": "major" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [30.50, 40.58], [31.00, 40.55], [31.50, 40.53], [32.00, 40.51],
-                                [32.50, 40.49], [33.00, 40.47], [33.50, 40.46], [34.00, 40.45],
-                                [34.50, 40.43], [35.00, 40.41], [35.50, 40.39], [36.00, 40.37]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "KAFZ - Doğu Segment", "color": "#fb923c", "weight": 2, "type": "major" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
+                                [30.00, 40.60], [30.50, 40.58], [31.00, 40.55], [31.50, 40.53],
+                                [32.00, 40.51], [32.50, 40.49], [33.00, 40.47], [33.50, 40.46],
+                                [34.00, 40.45], [34.50, 40.43], [35.00, 40.41], [35.50, 40.39],
                                 [36.00, 40.37], [36.50, 40.34], [37.00, 40.31], [37.50, 40.29],
                                 [38.00, 40.27], [38.50, 40.25], [39.00, 40.23], [39.50, 40.20],
                                 [40.00, 40.17], [40.50, 40.14], [41.00, 40.11], [41.50, 40.08],
@@ -1013,7 +966,7 @@
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "DAFZ - Ana Hat", "color": "#fb923c", "weight": 2, "type": "major" },
+                        "properties": { "name": "Doğu Anadolu Fay Hattı", "color": "#d4c5a9", "weight": 1.5 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
@@ -1030,7 +983,7 @@
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Gediz Grabeni", "color": "#fdba74", "weight": 1.5, "type": "graben" },
+                        "properties": { "name": "Gediz Grabeni", "color": "#d4c5a9", "weight": 1.2 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
@@ -1041,7 +994,7 @@
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Büyük Menderes Grabeni", "color": "#fdba74", "weight": 1.5, "type": "graben" },
+                        "properties": { "name": "Büyük Menderes Grabeni", "color": "#d4c5a9", "weight": 1.2 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
@@ -1052,17 +1005,7 @@
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Küçük Menderes Grabeni", "color": "#fdba74", "weight": 1.5, "type": "graben" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [27.00, 38.10], [27.40, 38.05], [27.80, 38.00], [28.20, 37.95], [28.60, 37.90]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Simav Grabeni", "color": "#fdba74", "weight": 1.5, "type": "graben" },
+                        "properties": { "name": "Simav Grabeni", "color": "#d4c5a9", "weight": 1.2 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
@@ -1072,60 +1015,41 @@
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Alaşehir Grabeni", "color": "#fdba74", "weight": 1.5, "type": "graben" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [28.00, 38.55], [28.30, 38.50], [28.60, 38.45], [28.90, 38.40], [29.20, 38.35]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Bakırçay Grabeni", "color": "#fdba74", "weight": 1.5, "type": "graben" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [26.80, 39.15], [27.10, 39.12], [27.40, 39.08], [27.70, 39.04]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Ege Fayları - Kuzey", "color": "#fcd34d", "weight": 1.3, "type": "secondary" },
+                        "properties": { "name": "Marmara Fayları", "color": "#d4c5a9", "weight": 1.5 },
                         "geometry": {
                             "type": "MultiLineString",
                             "coordinates": [
-                                [[25.80, 39.60], [26.30, 39.50], [26.80, 39.40], [27.30, 39.30], [27.80, 39.20]],
-                                [[25.50, 38.80], [26.00, 38.70], [26.50, 38.60], [27.00, 38.50]]
+                                [[26.50, 40.45], [27.00, 40.50], [27.50, 40.55], [28.00, 40.58], [28.50, 40.60]],
+                                [[28.50, 40.65], [29.00, 40.68], [29.50, 40.70], [30.00, 40.72]]
                             ]
                         }
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Ege Fayları - Güney", "color": "#fcd34d", "weight": 1.3, "type": "secondary" },
+                        "properties": { "name": "Ege Fayları", "color": "#d4c5a9", "weight": 1.2 },
                         "geometry": {
                             "type": "MultiLineString",
                             "coordinates": [
-                                [[25.80, 38.30], [26.30, 38.20], [26.80, 38.10], [27.30, 38.00], [27.80, 37.90]],
-                                [[25.30, 37.20], [25.80, 37.10], [26.30, 37.00], [26.80, 36.90], [27.30, 36.80]]
+                                [[25.80, 39.60], [26.30, 39.50], [26.80, 39.40], [27.30, 39.30]],
+                                [[25.80, 38.30], [26.30, 38.20], [26.80, 38.10], [27.30, 38.00]],
+                                [[25.30, 37.20], [25.80, 37.10], [26.30, 37.00], [26.80, 36.90]]
                             ]
                         }
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Helenik Yay", "color": "#fde68a", "weight": 1.8, "type": "secondary" },
+                        "properties": { "name": "Helenik Yay", "color": "#d4c5a9", "weight": 1.2 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
                                 [19.00, 36.30], [20.00, 36.60], [21.00, 36.95], [22.00, 37.35],
-                                [23.00, 37.80], [24.00, 38.30], [25.00, 38.85], [26.00, 39.45], [27.00, 40.10]
+                                [23.00, 37.80], [24.00, 38.30], [25.00, 38.85], [26.00, 39.45]
                             ]
                         }
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Ölü Deniz Fay Zonu", "color": "#fb923c", "weight": 2, "type": "major" },
+                        "properties": { "name": "Ölü Deniz Fay Zonu", "color": "#d4c5a9", "weight": 1.5 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
@@ -1137,97 +1061,61 @@
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Zagros Fayları", "color": "#fdba74", "weight": 1.8, "type": "secondary" },
+                        "properties": { "name": "Zagros Fayları", "color": "#d4c5a9", "weight": 1.2 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
                                 [44.00, 37.50], [45.00, 37.00], [46.00, 36.50], [47.00, 36.00],
-                                [48.00, 35.50], [49.00, 35.00], [50.00, 34.50], [51.00, 34.00], [52.00, 33.50]
+                                [48.00, 35.50], [49.00, 35.00], [50.00, 34.50], [51.00, 34.00]
                             ]
                         }
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Kuzey İran Fayları", "color": "#fdba74", "weight": 1.8, "type": "secondary" },
+                        "properties": { "name": "Kuzey İran Fayları", "color": "#d4c5a9", "weight": 1.2 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
                                 [43.50, 39.50], [45.00, 39.00], [46.50, 38.50], [48.00, 38.00],
-                                [49.50, 37.50], [51.00, 37.00], [52.50, 36.50], [54.00, 36.00], [55.50, 35.50]
+                                [49.50, 37.50], [51.00, 37.00], [52.50, 36.50], [54.00, 36.00]
                             ]
                         }
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Kafkas Fayları", "color": "#fcd34d", "weight": 1.5, "type": "secondary" },
+                        "properties": { "name": "Kafkas Fayları", "color": "#d4c5a9", "weight": 1.2 },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
                                 [40.50, 41.80], [41.50, 42.00], [42.50, 42.20], [43.50, 42.40],
-                                [44.50, 42.60], [45.50, 42.80], [46.50, 43.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Kıbrıs Yay Fayları", "color": "#fde68a", "weight": 1.5, "type": "secondary" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [31.50, 34.80], [32.50, 35.00], [33.50, 35.20], [34.50, 35.40], [35.50, 35.60]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Marmara Fayları", "color": "#fb923c", "weight": 1.8, "type": "major" },
-                        "geometry": {
-                            "type": "MultiLineString",
-                            "coordinates": [
-                                [[26.50, 40.45], [27.00, 40.50], [27.50, 40.55], [28.00, 40.58], [28.50, 40.60]],
-                                [[28.50, 40.65], [29.00, 40.68], [29.50, 40.70], [30.00, 40.72]]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Burdur-Fethiye Fay Zonu", "color": "#fdba74", "weight": 1.5, "type": "graben" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [29.00, 36.60], [29.50, 37.00], [30.00, 37.40], [30.50, 37.80]
+                                [44.50, 42.60], [45.50, 42.80]
                             ]
                         }
                     }
                 ]
             };
             
-            map.data.addGeoJson(faultLinesData);
+            window.faultDataLayer = new google.maps.Data();
+            window.faultDataLayer.addGeoJson(faultLinesData);
+            window.faultDataLayer.setMap(map);
             
-            map.data.setStyle(feature => {
-                return {
-                    strokeColor: feature.getProperty('color'),
-                    strokeWeight: feature.getProperty('weight'),
-                    strokeOpacity: 0.85,
-                    zIndex: feature.getProperty('type') === 'plate' ? 50 : 100
-                };
+            window.faultDataLayer.setStyle({
+                strokeColor: '#d4c5a9',
+                strokeWeight: 1.5,
+                strokeOpacity: 0.8,
+                zIndex: 150
             });
             
-            map.data.addListener('click', event => {
+            window.faultDataLayer.addListener('click', event => {
                 const name = event.feature.getProperty('name');
-                const type = event.feature.getProperty('type');
-                const typeText = type === 'plate' ? 'Tektonik Plaka Sınırı' : 
-                                 type === 'major' ? 'Ana Fay Hattı' :
-                                 type === 'graben' ? 'Graben Sistemi' : 'İkincil Fay';
-                
                 const infoWindow = new google.maps.InfoWindow({
                     content: `
                         <div style="color: #0d1117; padding: 12px;">
-                            <h3 style="margin: 0 0 8px 0; color: #dc2626; font-size: 14px; font-weight: 700;">
+                            <h3 style="margin: 0 0 8px 0; color: #d4c5a9; font-size: 14px; font-weight: 700;">
                                 ${name}
                             </h3>
                             <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                ${typeText}
+                                Fay Hattı
                             </p>
                         </div>
                     `,
@@ -1237,26 +1125,159 @@
             });
             
             faultLinesLoaded = true;
-            console.log('✅ Fay hatları ve tektonik plakalar yüklendi');
+            console.log('✅ Fay hatları yüklendi');
+        }
+        
+        function loadTectonicPlates() {
+            console.log('🌍 Tektonik plakalar yükleniyor...');
+            
+            const tectonicPlatesData = {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Avrasya Plakası - Güney Sınırı", "type": "plate" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [-10.00, 36.00], [-5.00, 36.00], [0.00, 36.50], [5.00, 37.00], 
+                                [10.00, 37.50], [15.00, 38.00], [20.00, 38.50], [25.00, 39.00], 
+                                [30.00, 39.50], [35.00, 39.00], [40.00, 38.50], [45.00, 38.00],
+                                [50.00, 37.50], [55.00, 37.00], [60.00, 36.50], [65.00, 36.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Arap Plakası - Kuzey Sınırı", "type": "plate" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [35.00, 37.00], [37.00, 37.50], [39.00, 38.00], [41.00, 38.50],
+                                [43.00, 39.00], [45.00, 39.50], [47.00, 40.00], [49.00, 40.50],
+                                [51.00, 41.00], [53.00, 41.50]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Afrika-Avrasya Sınırı", "type": "plate" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [-30.00, 36.00], [-20.00, 36.00], [-10.00, 36.00], [0.00, 36.50],
+                                [10.00, 37.50], [20.00, 38.50], [30.00, 39.50]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Hint-Avrasya Plaka Sınırı", "type": "plate" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [60.00, 25.00], [65.00, 28.00], [70.00, 30.00], [75.00, 32.00],
+                                [80.00, 34.00], [85.00, 35.00], [90.00, 36.00], [95.00, 37.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Pasifik Plakası - Filipin Çukuru", "type": "plate" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [125.00, 10.00], [125.50, 12.00], [126.00, 14.00], [126.50, 16.00],
+                                [127.00, 18.00], [127.50, 20.00], [128.00, 22.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Kuzey Amerika-Pasifik Sınırı (San Andreas)", "type": "plate" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [-125.00, 40.00], [-124.00, 39.00], [-123.00, 38.00], [-122.00, 37.00],
+                                [-121.00, 36.00], [-120.00, 35.00], [-119.00, 34.00], [-118.00, 33.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Nazca-Güney Amerika Sınırı (And Dağları)", "type": "plate" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [-75.00, -10.00], [-74.00, -15.00], [-73.00, -20.00], [-72.00, -25.00],
+                                [-71.00, -30.00], [-70.00, -35.00], [-69.00, -40.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Pasifik-Avustralya Plaka Sınırı", "type": "plate" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [155.00, -5.00], [160.00, -8.00], [165.00, -11.00], [170.00, -14.00],
+                                [175.00, -17.00], [180.00, -20.00]
+                            ]
+                        }
+                    }
+                ]
+            };
+            
+            window.tectonicPlatesLayer = new google.maps.Data();
+            window.tectonicPlatesLayer.addGeoJson(tectonicPlatesData);
+            window.tectonicPlatesLayer.setMap(map);
+            
+            window.tectonicPlatesLayer.setStyle({
+                strokeColor: '#dc2626',
+                strokeWeight: 3,
+                strokeOpacity: 0.9,
+                zIndex: 200
+            });
+            
+            window.tectonicPlatesLayer.addListener('click', event => {
+                const name = event.feature.getProperty('name');
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="color: #0d1117; padding: 12px;">
+                            <h3 style="margin: 0 0 8px 0; color: #dc2626; font-size: 14px; font-weight: 700;">
+                                🌍 ${name}
+                            </h3>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                Tektonik Plaka Sınırı
+                            </p>
+                        </div>
+                    `,
+                    position: event.latLng
+                });
+                infoWindow.open(map);
+            });
+            
+            tectonicPlatesLoaded = true;
+            console.log('✅ Tektonik plakalar yüklendi');
         }
         
         function toggleFaults() {
             const show = document.getElementById('showFaults').checked;
             
-            if (show) {
-                if (!faultLinesLoaded) {
-                    loadFaultLines();
-                }
-                map.data.setStyle(feature => {
-                    return {
-                        strokeColor: feature.getProperty('color'),
-                        strokeWeight: feature.getProperty('weight'),
-                        strokeOpacity: 0.85,
-                        zIndex: feature.getProperty('type') === 'plate' ? 50 : 100
-                    };
-                });
-            } else {
-                map.data.setStyle({ visible: false });
+            if (show && !faultLinesLoaded) {
+                loadFaultLines();
+            } else if (faultLinesLoaded && window.faultDataLayer) {
+                window.faultDataLayer.setMap(show ? map : null);
+            }
+        }
+        
+        function togglePlates() {
+            const show = document.getElementById('showPlates').checked;
+            
+            if (show && !tectonicPlatesLoaded) {
+                loadTectonicPlates();
+            } else if (tectonicPlatesLoaded && window.tectonicPlatesLayer) {
+                window.tectonicPlatesLayer.setMap(show ? map : null);
             }
         }
         
