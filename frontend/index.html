@@ -869,9 +869,9 @@
                     clickable: true
                 });
                 
-                const outerCircle = new google.maps.Circle({strokeColor: '#f97316',
-                    strokeOpacity: 0.25,
-                    strokeWeight: 1,
+                const outerCircle = new google.maps.Circle({
+                    strokeColor: '#f97316',
+                    strokeOpacity: 0.25strokeWeight: 1,
                     fillColor: '#f97316',
                     fillOpacity: 0.05,
                     map: map,
@@ -1128,137 +1128,86 @@
             console.log('✅ Fay hatları yüklendi');
         }
         
-        function loadTectonicPlates() {
+        async function loadTectonicPlates() {
             console.log('🌍 Tektonik plakalar yükleniyor...');
             
-            const tectonicPlatesData = {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Avrasya Plakası - Güney Sınırı", "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [-10.00, 36.00], [-5.00, 36.00], [0.00, 36.50], [5.00, 37.00], 
-                                [10.00, 37.50], [15.00, 38.00], [20.00, 38.50], [25.00, 39.00], 
-                                [30.00, 39.50], [35.00, 39.00], [40.00, 38.50], [45.00, 38.00],
-                                [50.00, 37.50], [55.00, 37.00], [60.00, 36.50], [65.00, 36.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Arap Plakası - Kuzey Sınırı", "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [35.00, 37.00], [37.00, 37.50], [39.00, 38.00], [41.00, 38.50],
-                                [43.00, 39.00], [45.00, 39.50], [47.00, 40.00], [49.00, 40.50],
-                                [51.00, 41.00], [53.00, 41.50]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Afrika-Avrasya Sınırı", "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [-30.00, 36.00], [-20.00, 36.00], [-10.00, 36.00], [0.00, 36.50],
-                                [10.00, 37.50], [20.00, 38.50], [30.00, 39.50]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Hint-Avrasya Plaka Sınırı", "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [60.00, 25.00], [65.00, 28.00], [70.00, 30.00], [75.00, 32.00],
-                                [80.00, 34.00], [85.00, 35.00], [90.00, 36.00], [95.00, 37.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Pasifik Plakası - Filipin Çukuru", "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [125.00, 10.00], [125.50, 12.00], [126.00, 14.00], [126.50, 16.00],
-                                [127.00, 18.00], [127.50, 20.00], [128.00, 22.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Kuzey Amerika-Pasifik Sınırı (San Andreas)", "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [-125.00, 40.00], [-124.00, 39.00], [-123.00, 38.00], [-122.00, 37.00],
-                                [-121.00, 36.00], [-120.00, 35.00], [-119.00, 34.00], [-118.00, 33.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Nazca-Güney Amerika Sınırı (And Dağları)", "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [-75.00, -10.00], [-74.00, -15.00], [-73.00, -20.00], [-72.00, -25.00],
-                                [-71.00, -30.00], [-70.00, -35.00], [-69.00, -40.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Pasifik-Avustralya Plaka Sınırı", "type": "plate" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [155.00, -5.00], [160.00, -8.00], [165.00, -11.00], [170.00, -14.00],
-                                [175.00, -17.00], [180.00, -20.00]
-                            ]
-                        }
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json');
+                const tectonicPlatesData = await response.json();
+                
+                window.tectonicPlatesLayer = new google.maps.Data();
+                window.tectonicPlatesLayer.addGeoJson(tectonicPlatesData);
+                window.tectonicPlatesLayer.setMap(map);
+                
+                window.tectonicPlatesLayer.setStyle(feature => {
+                    const type = feature.getProperty('type');
+                    
+                    if (type === 'subduction') {
+                        return {
+                            strokeColor: '#b91c1c',
+                            strokeWeight: 3.5,
+                            strokeOpacity: 0.95,
+                            zIndex: 210
+                        };
                     }
-                ]
-            };
-            
-            window.tectonicPlatesLayer = new google.maps.Data();
-            window.tectonicPlatesLayer.addGeoJson(tectonicPlatesData);
-            window.tectonicPlatesLayer.setMap(map);
-            
-            window.tectonicPlatesLayer.setStyle({
-                strokeColor: '#dc2626',
-                strokeWeight: 3,
-                strokeOpacity: 0.9,
-                zIndex: 200
-            });
-            
-            window.tectonicPlatesLayer.addListener('click', event => {
-                const name = event.feature.getProperty('name');
-                const infoWindow = new google.maps.InfoWindow({
-                    content: `
-                        <div style="color: #0d1117; padding: 12px;">
-                            <h3 style="margin: 0 0 8px 0; color: #dc2626; font-size: 14px; font-weight: 700;">
-                                🌍 ${name}
-                            </h3>
-                            <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                Tektonik Plaka Sınırı
-                            </p>
-                        </div>
-                    `,
-                    position: event.latLng
+                    else if (type === 'ridge') {
+                        return {
+                            strokeColor: '#f97316',
+                            strokeWeight: 2.5,
+                            strokeOpacity: 0.9,
+                            zIndex: 205
+                        };
+                    }
+                    else if (type === 'transform') {
+                        return {
+                            strokeColor: '#dc2626',
+                            strokeWeight: 2.5,
+                            strokeOpacity: 0.9,
+                            zIndex: 205
+                        };
+                    }
+                    else {
+                        return {
+                            strokeColor: '#dc2626',
+                            strokeWeight: 3,
+                            strokeOpacity: 0.9,
+                            zIndex: 200
+                        };
+                    }
                 });
-                infoWindow.open(map);
-            });
-            
-            tectonicPlatesLoaded = true;
-            console.log('✅ Tektonik plakalar yüklendi');
+                
+                window.tectonicPlatesLayer.addListener('click', event => {
+                    const name = event.feature.getProperty('Name') || 'Plaka Sınırı';
+                    const type = event.feature.getProperty('type') || 'Genel';
+                    
+                    let typeText = 'Plaka Sınırı';
+                    if (type === 'subduction') typeText = 'Dalma Zonu (Subduction)';
+                    else if (type === 'ridge') typeText = 'Yayılma Sırtı (Ridge)';
+                    else if (type === 'transform') typeText = 'Transform Fay';
+                    
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div style="color: #0d1117; padding: 12px;">
+                                <h3 style="margin: 0 0 8px 0; color: #dc2626; font-size: 14px; font-weight: 700;">
+                                    🌍 ${name}
+                                </h3>
+                                <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                    ${typeText}
+                                </p>
+                            </div>
+                        `,
+                        position: event.latLng
+                    });
+                    infoWindow.open(map);
+                });
+                
+                tectonicPlatesLoaded = true;
+                console.log('✅ Tektonik plakalar yüklendi (GitHub - PB2002)');
+                
+            } catch (error) {
+                console.error('❌ Tektonik plaka yükleme hatası:', error);
+                alert('Tektonik plaka verileri yüklenemedi. İnternet bağlantınızı kontrol edin.');
+            }
         }
         
         function toggleFaults() {
