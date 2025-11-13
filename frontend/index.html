@@ -1,89 +1,1011 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌍 Deprem Haritası</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🌍 Deprem Takip Sistemi</title>
     <style>
-        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        #map { height: 100vh; width: 100%; }
-        .info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: white;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            overflow-x: hidden;
+        }
+        
+        #header {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border-bottom: 3px solid #dc2626;
+        }
+        
+        #header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+            color: #f3f4f6;
+            font-weight: 700;
+        }
+        
+        #header p {
+            opacity: 0.85;
+            font-size: 0.9em;
+            color: #d1d5db;
+        }
+        
+        #controls {
+            background: #161b22;
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #30363d;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+            transform: translateY(-2px);
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .filter-group label {
+            font-size: 13px;
+            color: #d1d5db;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            background: #0d1117;
+            color: #f3f4f6;
+            border: 1.5px solid #30363d;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        
+        #mainContainer {
+            display: flex;
+            height: calc(100vh - 180px);
+        }
+        
+        #leftPanel {
+            width: 320px;
+            background: #161b22;
+            border-right: 2px solid #30363d;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        #map {
+            flex: 1;
+        }
+        
+        .panel-section {
+            margin-bottom: 20px;
+            background: #1f2937;
             padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border: 1px solid #30363d;
+        }
+        
+        .panel-section h3 {
+            font-size: 1em;
+            margin-bottom: 10px;
+            color: #f3f4f6;
+            border-bottom: 2px solid #dc2626;
+            padding-bottom: 5px;
+        }
+        
+        .earthquake-item {
+            background: #0d1117;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .earthquake-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .earthquake-item.mag-high { border-left-color: #dc2626; }
+        .earthquake-item.mag-medium { border-left-color: #f97316; }
+        .earthquake-item.mag-low { border-left-color: #eab308; }
+        
+        .eq-magnitude {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #dc2626;
+        }
+        
+        .eq-location {
+            font-size: 0.85em;
+            color: #9ca3af;
+            margin-top: 3px;
+        }
+        
+        .eq-time {
+            font-size: 0.75em;
+            color: #6b7280;
+            margin-top: 3px;
+        }
+        
+        .legend {
+            background: rgba(22, 27, 34, 0.95);
+            padding: 15px;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border: 1.5px solid #30363d;
+        }
+        
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: #f3f4f6;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            font-size: 12px;
+            color: #c9d1d9;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 2px solid #30363d;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .checkbox-group label {
+            font-size: 13px;
+        }
+        
+        #autoRefresh {
+            position: fixed;
+            top: 80px;
+            right: 10px;
+            background: #1f2937;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            font-size: 11px;
+            color: #22c55e;
             z-index: 1000;
+        }
+        
+        .anomaly-alert {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            color: white;
+            padding: 12px 20px;
+            margin: 0;
+            text-align: center;
+            animation: pulse 2.5s infinite;
+            border-bottom: 3px solid #7f1d1d;
+            font-size: 0.9em;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+        
+        /* AÇILIR/KAPANIR PANEL BUTONLARI */
+        .panel-toggle {
+            display: none;
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            transition: all 0.3s;
+        }
+        
+        .panel-toggle:active {
+            background: #b91c1c;
+        }
+        
+        .panel-toggle::after {
+            content: '▼';
+            float: right;
+            transition: transform 0.3s;
+        }
+        
+        .panel-toggle.active::after {
+            transform: rotate(180deg);
+        }
+        
+        /* MOBİL İÇİN COLLAPSIBLE İÇERİK */
+        .collapsible-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        /* MOBİL UYUMLULUK - TABLET */
+        @media (max-width: 1024px) {
+            #leftPanel {
+                width: 280px;
+            }
+            
+            #header h1 {
+                font-size: 1.5em;
+            }
+        }
+        
+        /* MOBİL UYUMLULUK - TABLET PORTRAIT */
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+            }
+            
+            /* PANEL TOGGLE BUTONLARINI GÖSTER */
+            .panel-toggle {
+                display: block;
+            }
+            
+            /* FİLTRELER MOBİLDE BAŞLANGIÇTA KAPALI */
+            #controls {
+                max-height: 0;
+                padding: 0;
+                border: none;
+            }
+            
+            #controls.expanded {
+                max-height: 500px;
+                padding: 8px;
+                border-bottom: 2px solid #30363d;
+            }
+            
+            /* İSTATİSTİKLER VE DEPREMLER MOBİLDE BAŞLANGIÇTA KAPALI */
+            .panel-section {
+                max-height: 0;
+                padding: 0;
+                margin: 0;
+                border: none;
+                opacity: 0;
+            }
+            
+            .panel-section.expanded {
+                max-height: 500px;
+                padding: 15px;
+                margin-bottom: 15px;
+                border: 1px solid #30363d;
+                opacity: 1;
+            }
+            
+            #header h1 {
+                font-size: 1.3em;
+            }
+            
+            #header p {
+                font-size: 0.8em;
+            }
+            
+            #mainContainer {
+                flex-direction: column;
+                height: auto;
+                min-height: 70vh;
+            }
+            
+            #leftPanel {
+                width: 100%;
+                max-height: none;
+                border-right: none;
+                border-bottom: 2px solid #30363d;
+                padding: 10px;
+            }
+            
+            #map {
+                min-height: 60vh;
+                height: 60vh;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .filter-group label {
+                font-size: 12px;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                padding: 5px 8px;
+                font-size: 12px;
+            }
+            
+            .earthquake-item {
+                padding: 8px;
+            }
+            
+            #autoRefresh {
+                top: 65px;
+                right: 8px;
+                font-size: 9px;
+                padding: 6px 10px;
+            }
+            
+            .legend {
+                display: none;
+            }
+        }
+        
+        /* MOBİL UYUMLULUK - TELEFON */
+        @media (max-width: 480px) {
+            #header {
+                padding: 12px;
+            }
+            
+            #header h1 {
+                font-size: 1.1em;
+            }
+            
+            #header p {
+                font-size: 0.7em;
+            }
+            
+            #controls.expanded {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px;
+                padding: 8px;
+            }
+            
+            .btn {
+                width: 100%;
+                padding: 10px;
+                font-size: 13px;
+            }
+            
+            .filter-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .filter-group label {
+                font-size: 11px;
+                min-width: 80px;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                flex: 1;
+                padding: 8px;
+                font-size: 12px;
+            }
+            
+            #map {
+                min-height: 70vh;
+                height: 70vh;
+            }
+            
+            .panel-section.expanded h3 {
+                font-size: 0.9em;
+            }
+            
+            .earthquake-item {
+                padding: 8px;
+                margin: 6px 0;
+            }
+            
+            .eq-magnitude {
+                font-size: 1.2em;
+            }
+            
+            .eq-location {
+                font-size: 0.8em;
+            }
+            
+            .eq-time {
+                font-size: 0.7em;
+            }
+            
+            #autoRefresh {
+                top: 60px;
+                right: 5px;
+                font-size: 8px;
+                padding: 5px 8px;
+            }
+            
+            .anomaly-alert {
+                padding: 10px 12px;
+                font-size: 0.8em;
+            }
+        }
+        
+        /* ÇOK KÜÇÜK EKRANLAR */
+        @media (max-width: 360px) {
+            #header h1 {
+                font-size: 1em;
+            }
+            
+            .filter-group label {
+                font-size: 10px;
+                min-width: 70px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="info">
-        <h3>🌍 Deprem Takip Sistemi</h3>
-        <p id="status">Yükleniyor...</p>
+    <div id="header">
+        <h1>🌍 Deprem Takip ve Anomali Tespit Sistemi</h1>
+        <p>Türkiye ve Global Deprem Verileri - Gerçek Zamanlı İzleme</p>
     </div>
-    <div id="map"></div>
+    
+    <button class="panel-toggle" onclick="togglePanel('controls')">
+        🎛️ Filtreler
+    </button>
+    
+    <div id="controls">
+        <button class="btn" onclick="refreshData()">🔄 Yenile</button>
+        
+        <div class="filter-group">
+            <label>Kaynak:</label>
+            <select id="sourceFilter" onchange="filterEarthquakes()">
+                <option value="all">Tümü</option>
+                <option value="Kandilli">Kandilli</option>
+                <option value="USGS">USGS</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Min Büyüklük:</label>
+            <input type="number" id="magFilter" value="2.5" step="0.5" min="0" max="10" onchange="filterEarthquakes()">
+        </div>
+        
+        <div class="filter-group">
+            <label>Zaman:</label>
+            <select id="timeFilter" onchange="filterEarthquakes()">
+                <option value="24">Son 24 Saat</option>
+                <option value="48" selected>Son 48 Saat</option>
+                <option value="168">Son 7 Gün</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Görünüm:</label>
+            <select id="viewMode" onchange="changeViewMode()">
+                <option value="markers" selected>Noktalar</option>
+                <option value="heatmap">Isı Haritası</option>
+            </select>
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" id="showFaults" onchange="toggleFaults()">
+            <label for="showFaults">Fay Hatları</label>
+        </div>
+    </div>
+    
+    <div id="mainContainer">
+        <div id="leftPanel">
+            <button class="panel-toggle" onclick="togglePanel('statsSection')">
+                📊 İstatistikler
+            </button>
+            
+            <div id="statsSection" class="panel-section">
+                <h3>📊 İstatistikler</h3>
+                <div style="color: #9ca3af; font-size: 0.9em; line-height: 1.8;">
+                    <div><strong>Toplam (24h):</strong> <span id="stat1">-</span></div>
+                    <div><strong>En Büyük (24h):</strong> <span id="stat2">-</span></div>
+                    <div><strong>Aktif Anomali:</strong> <span id="stat3">-</span></div>
+                    <div><strong>Son Güncelleme:</strong> <span id="stat4">-</span></div>
+                </div>
+            </div>
+            
+            <button class="panel-toggle" onclick="togglePanel('topSection')">
+                🔴 En Büyük 5 Deprem
+            </button>
+            
+            <div id="topSection" class="panel-section">
+                <h3>🔴 En Büyük 5 Deprem</h3>
+                <div id="topEarthquakes">
+                    <p style="color: #6b7280; font-size: 0.85em;">Yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+    </div>
+    
+    <div id="autoRefresh">● Otomatik Yenileme Aktif (5dk)</div>
     
     <script>
-        function initMap() {
-            console.log('🗺️ Harita başlatılıyor...');
-            document.getElementById('status').textContent = 'Harita yükleniyor...';
-            
-            const map = new google.maps.Map(document.getElementById('map'), {
-                center: { lat: 39, lng: 35 },
-                zoom: 6
-            });
-            
-            console.log('✅ Harita oluşturuldu');
-            document.getElementById('status').textContent = 'Veriler yükleniyor...';
-            
-            loadData(map);
-        }
+        let map;
+        let markers = [];
+        let heatmap = null;
+        let anomalyCircles = [];
+        let faultLines = [];
+        let allEarthquakes = [];
+        let anomalies = [];
+        let autoRefreshInterval;
         
-        async function loadData(map) {
-            try {
-                // Depremleri yükle
-                const response = await fetch('/api/earthquakes?hours=24');
-                const data = await response.json();
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            
+            if (window.innerWidth <= 768) {
+                // Mobilde toggle
+                if (panel.classList.contains('expanded')) {
+                    panel.classList.remove('expanded');
+                } else {
+                    panel.classList.add('expanded');
+                }
                 
-                document.getElementById('status').textContent = `✅ ${data.earthquakes.length} deprem yüklendi`;
-                
-                // Marker'ları ekle
-                data.earthquakes.forEach(eq => {
-                    const color = eq.magnitude >= 4 ? '#dc2626' : '#22c55e';
-                    
-                    new google.maps.Marker({
-                        position: { lat: eq.latitude, lng: eq.longitude },
-                        map: map,
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            fillColor: color,
-                            fillOpacity: 0.7,
-                            strokeColor: '#ffffff',
-                            strokeWeight: 1,
-                            scale: 6
-                        },
-                        title: `M${eq.magnitude} - ${eq.location}`
-                    });
+                // Buton animasyonu
+                const buttons = document.querySelectorAll('.panel-toggle');
+                buttons.forEach(btn => {
+                    const nextElement = btn.nextElementSibling;
+                    if (nextElement && nextElement.id === panelId) {
+                        btn.classList.toggle('active');
+                    }
                 });
-                
-                console.log('✅ Marker\'lar eklendi');
-            } catch (error) {
-                console.error('❌ Veri yükleme hatası:', error);
-                document.getElementById('status').textContent = '❌ Veri yükleme hatası';
             }
         }
         
-        window.onerror = function(msg, url, line) {
-            console.error('❌ Hata:', msg);
-            document.getElementById('status').textContent = '❌ Hata: ' + msg;
-        };
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 39.0, lng: 35.0 },
+                zoom: 6,
+                gestureHandling: 'greedy',
+                styles: [
+                    { elementType: "geometry", stylers: [{ color: "#1a1f3a" }] },
+                    { elementType: "labels.text.stroke", stylers: [{ color: "#0a0e27" }] },
+                    { elementType: "labels.text.fill", stylers: [{ color: "#e5e7eb" }] },
+                    {
+                        featureType: "administrative.country",
+                        elementType: "geometry.stroke",
+                        stylers: [{ color: "#fbbf24" }, { weight: 2 }]
+                    },
+                    {
+                        featureType: "administrative.province",
+                        elementType: "geometry.stroke",
+                        stylers: [{ color: "#94a3b8" }, { weight: 1 }]
+                    },
+                    {
+                        featureType: "administrative.locality",
+                        elementType: "labels.text.fill",
+                        stylers: [{ color: "#f3f4f6" }]
+                    },
+                    {
+                        featureType: "water",
+                        elementType: "geometry",
+                        stylers: [{ color: "#1e3a5f" }]
+                    },
+                    {
+                        featureType: "water",
+                        elementType: "labels.text.fill",
+                        stylers: [{ color: "#94a3b8" }]
+                    },
+                    {
+                        featureType: "landscape",
+                        elementType: "geometry",
+                        stylers: [{ color: "#2d3748" }]
+                    },
+                    {
+                        featureType: "road",
+                        stylers: [{ visibility: "simplified" }]
+                    },
+                    {
+                        featureType: "road",
+                        elementType: "geometry",
+                        stylers: [{ color: "#4a5568" }]
+                    }
+                ]
+            });
+            
+            // Legend - sadece desktop'ta göster
+            if (window.innerWidth > 768) {
+                const legend = document.createElement('div');
+                legend.className = 'legend';
+                legend.innerHTML = `
+                    <h4>Deprem Büyüklüğü</h4>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #22c55e;"></div>
+                        <span>2.5 - 3.5</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #eab308;"></div>
+                        <span>3.5 - 4.5</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f97316;"></div>
+                        <span>4.5 - 5.5</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #dc2626;"></div>
+                        <span>5.5+</span>
+                    </div>
+                `;
+                map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
+            }
+            
+            loadData();
+            startAutoRefresh();
+        }
+        
+        async function loadData() {
+            try {
+                const hours = parseInt(document.getElementById('timeFilter').value);
+                const response = await fetch(`/api/earthquakes?hours=${hours}`);
+                const data = await response.json();
+                
+                allEarthquakes = data.earthquakes;
+                
+                const anomalyResponse = await fetch('/api/anomalies');
+                const anomalyData = await anomalyResponse.json();
+                anomalies = anomalyData.anomalies;
+                
+                const statsResponse = await fetch('/api/stats');
+                const stats = await statsResponse.json();
+                
+                document.getElementById('stat1').textContent = stats.total_24h;
+                document.getElementById('stat2').textContent = stats.max_magnitude_24h.toFixed(1);
+                document.getElementById('stat3').textContent = stats.active_anomalies;
+                // API'den gelen saat zaten Türkiye saati (UTC+3)
+document.getElementById('stat4').textContent = new Date(stats.last_update).toLocaleTimeString('tr-TR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+});
+                
+                updateTopEarthquakes();
+                
+                if (stats.active_anomalies > 0) {
+                    showAnomalyAlert(anomalies);
+                }
+                
+                filterEarthquakes();
+                drawAnomalyZones();
+                
+            } catch (error) {
+                console.error('Veri yükleme hatası:', error);
+            }
+        }
+        
+        function updateTopEarthquakes() {
+            const sorted = [...allEarthquakes].sort((a, b) => b.magnitude - a.magnitude).slice(0, 5);
+            const container = document.getElementById('topEarthquakes');
+            
+            if (sorted.length === 0) {
+                container.innerHTML = '<p style="color: #6b7280; font-size: 0.85em;">Veri yok</p>';
+                return;
+            }
+            
+            container.innerHTML = sorted.map(eq => {
+                const magClass = eq.magnitude >= 5 ? 'mag-high' : eq.magnitude >= 4 ? 'mag-medium' : 'mag-low';
+                const eqTime = new Date(eq.timestamp);
+                
+                return `
+                    <div class="earthquake-item ${magClass}" onclick="focusEarthquake(${eq.latitude}, ${eq.longitude})">
+                        <div class="eq-magnitude">M${eq.magnitude.toFixed(1)}</div>
+                        <div class="eq-location">${eq.location.substring(0, 35)}...</div>
+                        <div class="eq-time">${eqTime.toLocaleString('tr-TR')}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function focusEarthquake(lat, lon) {
+            map.setCenter({ lat, lng: lon });
+            map.setZoom(10);
+        }
+        
+        function filterEarthquakes() {
+            const viewMode = document.getElementById('viewMode').value;
+            
+            if (viewMode === 'heatmap') {
+                showHeatmap();
+            } else {
+                showMarkers();
+            }
+        }
+        
+        function showMarkers() {
+            if (heatmap) {
+                heatmap.setMap(null);
+            }
+            
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+            
+            const source = document.getElementById('sourceFilter').value;
+            const minMag = parseFloat(document.getElementById('magFilter').value);
+            const hours = parseInt(document.getElementById('timeFilter').value);
+            
+            const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
+            
+            const filtered = allEarthquakes.filter(eq => {
+                const matchSource = source === 'all' || eq.source === source;
+                const matchMag = eq.magnitude >= minMag;
+                const matchTime = new Date(eq.timestamp) >= cutoff;
+                return matchSource && matchMag && matchTime;
+            });
+            
+            const maxEq = filtered.reduce((max, eq) => eq.magnitude > max.magnitude ? eq : max, filtered[0] || { magnitude: 0 });
+            
+            filtered.forEach(eq => {
+                const color = getMagnitudeColor(eq.magnitude);
+                const isLargest = eq === maxEq;
+                
+                const marker = new google.maps.Marker({
+                    position: { lat: eq.latitude, lng: eq.longitude },
+                    map: map,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: Math.max(eq.magnitude * 2.5, 5),
+                        fillColor: color,
+                        fillOpacity: 0.85,
+                        strokeColor: '#ffffff',
+                        strokeWeight: isLargest ? 3 : 2
+                    },
+                    title: `Büyüklük ${eq.magnitude} - ${eq.location}`,
+                    animation: isLargest ? google.maps.Animation.BOUNCE : null
+                });
+                
+                const eqTime = new Date(eq.timestamp);
+                
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="color: #0d1117; padding: 16px; min-width: 280px; font-family: 'Segoe UI', sans-serif;">
+                            <h3 style="margin: 0 0 14px 0; color: #dc2626; font-size: 18px; font-weight: 700; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">📍 Deprem Detayları</h3>
+                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Büyüklük:</strong> <span style="color: #dc2626; font-weight: 700; font-size: 16px;">${eq.magnitude.toFixed(1)}</span></p>
+                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Derinlik:</strong> ${eq.depth.toFixed(1)} km</p>
+                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Konum:</strong> ${eq.location}</p>
+                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Tarih:</strong> ${eqTime.toLocaleDateString('tr-TR')}</p>
+                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Saat:</strong> ${eqTime.toLocaleTimeString('tr-TR')}</p>
+                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Kaynak:</strong> ${eq.source}</p>
+                        </div>
+                    `
+                });
+                
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+                
+                markers.push(marker);
+            });
+        }
+        
+        function showHeatmap() {
+            markers.forEach(marker => marker.setMap(null));
+            
+            const source = document.getElementById('sourceFilter').value;
+            const minMag = parseFloat(document.getElementById('magFilter').value);
+            const hours = parseInt(document.getElementById('timeFilter').value);
+            
+            const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
+            
+            const filtered = allEarthquakes.filter(eq => {
+                const matchSource = source === 'all' || eq.source === source;
+                const matchMag = eq.magnitude >= minMag;
+                const matchTime = new Date(eq.timestamp) >= cutoff;
+                return matchSource && matchMag && matchTime;
+            });
+            
+            const heatmapData = filtered.map(eq => ({
+                location: new google.maps.LatLng(eq.latitude, eq.longitude),
+                weight: eq.magnitude
+            }));
+            
+            if (heatmap) {
+                heatmap.setMap(null);
+            }
+            
+            heatmap = new google.maps.visualization.HeatmapLayer({
+                data: heatmapData,
+                radius: 20,
+                opacity: 0.7
+            });
+            
+            heatmap.setMap(map);
+        }
+        
+        function drawAnomalyZones() {
+            anomalyCircles.forEach(circle => circle.setMap(null));
+            anomalyCircles = [];
+            
+            if (!anomalies || anomalies.length === 0) {
+                return;
+            }
+            
+            anomalies.forEach(anomaly => {
+                const center = { lat: anomaly.latitude, lng: anomaly.longitude };
+                
+                const circle =new google.maps.Circle({
+                    strokeColor: '#dc2626',
+                    strokeOpacity: 0.4,
+                    strokeWeight: 2,
+                    fillColor: '#dc2626',
+                    fillOpacity: 0.12,
+                    map: map,
+                    center: center,
+                    radius: anomaly.radius_km * 1000,
+                    clickable: true
+                });
+                
+                const outerCircle = new google.maps.Circle({
+                    strokeColor: '#f97316',
+                    strokeOpacity: 0.25,
+                    strokeWeight: 1,
+                    fillColor: '#f97316',
+                    fillOpacity: 0.05,
+                    map: map,
+                    center: center,
+                    radius: anomaly.radius_km * 1500,
+                });
+                
+                const marker = new google.maps.Marker({
+                    position: center,
+                    map: map,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: '#dc2626',
+                        fillOpacity: 0.85,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2
+                    },
+                    title: `Anomali Bölgesi - Score: ${anomaly.z_score.toFixed(2)}`,
+                    animation: google.maps.Animation.DROP
+                });
+                
+                const anomalyInfo = new google.maps.InfoWindow({
+                    content: `
+                        <div style="color: #0d1117; padding: 16px; min-width: 300px; font-family: 'Segoe UI', sans-serif;">
+                            <h3 style="margin: 0 0 14px 0; color: #dc2626; font-size: 18px; font-weight: 700; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
+                                ⚠️ Anomali Bölgesi
+                            </h3>
+                            <p style="margin: 8px 0; font-size: 14px;">
+                                <strong style="color: #374151;">Konum:</strong> ${anomaly.location || 'Bilinmiyor'}
+                            </p>
+                            <p style="margin: 8px 0; font-size: 14px;">
+                                <strong style="color: #374151;">Yarıçap:</strong> ${anomaly.radius_km.toFixed(0)} km
+                            </p>
+                            <p style="margin: 8px 0; font-size: 14px;">
+                                <strong style="color: #374151;">Score:</strong> <span style="color: #dc2626; font-weight: 700;">${anomaly.z_score.toFixed(1)}</span>
+                            </p>
+                            <p style="margin: 8px 0; font-size: 14px;">
+                                <strong style="color: #374151;">Tip:</strong> ${anomaly.anomaly_type}
+                            </p>
+                            <p style="margin: 8px 0; font-size: 14px;">
+                                <strong style="color: #374151;">Durum:</strong> 
+                                <span style="color: #dc2626; font-weight: 600;">${anomaly.alert_level.toUpperCase()}</span>
+                            </p>
+                            <div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px;">
+                                <p style="margin: 0; font-size: 13px; color: #991b1b;">
+                                    <strong>⚠️ Dikkat:</strong> ${anomaly.description}
+                                </p>
+                            </div>
+                        </div>
+                    `
+                });
+                
+                marker.addListener('click', () => {
+                    anomalyInfo.open(map, marker);
+                });
+                
+                circle.addListener('click', () => {
+                    anomalyInfo.open(map, marker);
+                });
+                
+                anomalyCircles.push(circle);
+                anomalyCircles.push(outerCircle);
+                anomalyCircles.push(marker);
+            });
+        }
+        
+        function toggleFaults() {
+            const show = document.getElementById('showFaults').checked;
+            
+            if (show && faultLines.length === 0) {
+                const faults = [
+                    { name: 'Kuzey Anadolu Fay Hattı', coords: [[40.8, 26.5], [40.7, 31.0], [40.5, 36.0], [40.3, 42.0]] },
+                    { name: 'Doğu Anadolu Fay Hattı', coords: [[39.5, 39.0], [38.5, 38.5], [37.5, 37.5], [36.5, 36.0]] }
+                ];
+                
+                faults.forEach(fault => {
+                    const line = new google.maps.Polyline({
+                        path: fault.coords.map(c => ({ lat: c[0], lng: c[1] })),
+                        strokeColor: '#dc2626',
+                        strokeOpacity: 0.7,
+                        strokeWeight: 3,
+                        map: map
+                    });
+                    faultLines.push(line);
+                });
+            } else {
+                faultLines.forEach(line => line.setMap(show ? map : null));
+            }
+        }
+        
+        function changeViewMode() {
+            filterEarthquakes();
+        }
+        
+        function getMagnitudeColor(mag) {
+            if (mag < 3.5) return '#22c55e';
+            if (mag < 4.5) return '#eab308';
+            if (mag < 5.5) return '#f97316';
+            return '#dc2626';
+        }
+        
+        function showAnomalyAlert(anomalies) {
+            const oldAlert = document.querySelector('.anomaly-alert');
+            if (oldAlert) oldAlert.remove();
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'anomaly-alert';
+            alertDiv.innerHTML = `
+                <strong>⚠️ ${anomalies.length} Bölgede Anomali Tespit Edildi!</strong>
+            `;
+            document.body.insertBefore(alertDiv, document.body.firstChild);
+        }
+        
+        function refreshData() {
+            loadData();
+        }
+        
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                console.log('Otomatik yenileme...');
+                loadData();
+            }, 5 * 60 * 1000);
+        }
     </script>
     
-    <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBXRK2bLQlV5rZzaLKlQ3mKvhPGS1JXHII&callback=initMap">
-    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6sOp517PKb6Snl9mmk7AW3afLQrnJSDw&libraries=visualization&callback=initMap" async defer></script>
 </body>
 </html>
