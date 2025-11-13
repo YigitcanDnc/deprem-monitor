@@ -237,7 +237,6 @@
             50% { opacity: 0.85; }
         }
         
-        /* AÇILIR/KAPANIR PANEL BUTONLARI */
         .panel-toggle {
             display: none;
             background: #dc2626;
@@ -268,13 +267,11 @@
             transform: rotate(180deg);
         }
         
-        /* MOBİL İÇİN COLLAPSIBLE İÇERİK */
         .collapsible-content {
             overflow: hidden;
             transition: max-height 0.3s ease-out;
         }
         
-        /* MOBİL UYUMLULUK - TABLET */
         @media (max-width: 1024px) {
             #leftPanel {
                 width: 280px;
@@ -285,18 +282,15 @@
             }
         }
         
-        /* MOBİL UYUMLULUK - TABLET PORTRAIT */
         @media (max-width: 768px) {
             body {
                 overflow-y: auto;
             }
             
-            /* PANEL TOGGLE BUTONLARINI GÖSTER */
             .panel-toggle {
                 display: block;
             }
             
-            /* FİLTRELER MOBİLDE BAŞLANGIÇTA KAPALI */
             #controls {
                 max-height: 0;
                 padding: 0;
@@ -309,7 +303,6 @@
                 border-bottom: 2px solid #30363d;
             }
             
-            /* İSTATİSTİKLER VE DEPREMLER MOBİLDE BAŞLANGIÇTA KAPALI */
             .panel-section {
                 max-height: 0;
                 padding: 0;
@@ -384,7 +377,6 @@
             }
         }
         
-        /* MOBİL UYUMLULUK - TELEFON */
         @media (max-width: 480px) {
             #header {
                 padding: 12px;
@@ -467,7 +459,6 @@
             }
         }
         
-        /* ÇOK KÜÇÜK EKRANLAR */
         @media (max-width: 360px) {
             #header h1 {
                 font-size: 1em;
@@ -568,23 +559,21 @@
         let markers = [];
         let heatmap = null;
         let anomalyCircles = [];
-        let faultLines = [];
         let allEarthquakes = [];
         let anomalies = [];
         let autoRefreshInterval;
+        let faultLinesLoaded = false;
         
         function togglePanel(panelId) {
             const panel = document.getElementById(panelId);
             
             if (window.innerWidth <= 768) {
-                // Mobilde toggle
                 if (panel.classList.contains('expanded')) {
                     panel.classList.remove('expanded');
                 } else {
                     panel.classList.add('expanded');
                 }
                 
-                // Buton animasyonu
                 const buttons = document.querySelectorAll('.panel-toggle');
                 buttons.forEach(btn => {
                     const nextElement = btn.nextElementSibling;
@@ -646,7 +635,6 @@
                 ]
             });
             
-            // Legend - sadece desktop'ta göster
             if (window.innerWidth > 768) {
                 const legend = document.createElement('div');
                 legend.className = 'legend';
@@ -694,12 +682,11 @@
                 document.getElementById('stat1').textContent = stats.total_24h;
                 document.getElementById('stat2').textContent = stats.max_magnitude_24h.toFixed(1);
                 document.getElementById('stat3').textContent = stats.active_anomalies;
-                // API'den gelen saat zaten Türkiye saati (UTC+3)
-document.getElementById('stat4').textContent = new Date(stats.last_update).toLocaleTimeString('tr-TR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-});
+                document.getElementById('stat4').textContent = new Date(stats.last_update).toLocaleTimeString('tr-TR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
                 
                 updateTopEarthquakes();
                 
@@ -864,7 +851,7 @@ document.getElementById('stat4').textContent = new Date(stats.last_update).toLoc
             anomalies.forEach(anomaly => {
                 const center = { lat: anomaly.latitude, lng: anomaly.longitude };
                 
-                const circle =new google.maps.Circle({
+                const circle = new google.maps.Circle({
                     strokeColor: '#dc2626',
                     strokeOpacity: 0.4,
                     strokeWeight: 2,
@@ -918,15 +905,15 @@ document.getElementById('stat4').textContent = new Date(stats.last_update).toLoc
                                 <strong style="color: #374151;">Score:</strong> <span style="color: #dc2626; font-weight: 700;">${anomaly.z_score.toFixed(1)}</span>
                             </p>
                             <p style="margin: 8px 0; font-size: 14px;">
-                                <strong style="color: #374151;">Tip:</strong> ${anomaly.anomaly_type}
+                                <strong style="color: #374151;">Tip:</strong> ${anomaly.anomaly_type || 'Frekans'}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px;">
                                 <strong style="color: #374151;">Durum:</strong> 
-                                <span style="color: #dc2626; font-weight: 600;">${anomaly.alert_level.toUpperCase()}</span>
+                                <span style="color: #dc2626; font-weight: 600;">${(anomaly.alert_level || 'red').toUpperCase()}</span>
                             </p>
                             <div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px;">
                                 <p style="margin: 0; font-size: 13px; color: #991b1b;">
-                                    <strong>⚠️ Dikkat:</strong> ${anomaly.description}
+                                    <strong>⚠️ Dikkat:</strong> ${anomaly.description || 'Anomali tespit edildi'}
                                 </p>
                             </div>
                         </div>
@@ -947,27 +934,193 @@ document.getElementById('stat4').textContent = new Date(stats.last_update).toLoc
             });
         }
         
+        function loadFaultLines() {
+            console.log('🗺️ Fay hatları yükleniyor...');
+            
+            const faultLinesData = {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Kuzey Anadolu Fay Hattı", "color": "#dc2626", "weight": 2.5 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [26.20, 40.85], [26.80, 40.78], [27.50, 40.72], [28.20, 40.68],
+                                [29.00, 40.65], [30.00, 40.60], [31.00, 40.55], [32.00, 40.52],
+                                [33.00, 40.48], [34.00, 40.45], [35.00, 40.40], [36.00, 40.36],
+                                [37.00, 40.32], [38.00, 40.28], [39.00, 40.23], [40.00, 40.18],
+                                [41.00, 40.12], [42.00, 40.08], [43.00, 40.05], [44.00, 40.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Doğu Anadolu Fay Hattı", "color": "#dc2626", "weight": 2.5 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [35.80, 36.80], [36.50, 37.10], [37.20, 37.40], [37.80, 37.65],
+                                [38.30, 37.95], [38.90, 38.25], [39.50, 38.50], [40.00, 38.70],
+                                [40.50, 38.95], [41.00, 39.15], [41.50, 39.40], [42.00, 39.60],
+                                [42.50, 39.80], [43.00, 39.95], [43.50, 40.10], [44.00, 40.20]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Gediz Grabeni", "color": "#ea580c", "weight": 1.8 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [[26.50, 38.85], [27.50, 38.78], [28.50, 38.72], [29.30, 38.68]]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Büyük Menderes Grabeni", "color": "#ea580c", "weight": 1.8 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [[27.00, 37.85], [28.00, 37.78], [29.00, 37.72], [29.80, 37.68]]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Simav Grabeni", "color": "#ea580c", "weight": 1.8 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [[28.80, 39.15], [29.20, 39.08], [29.60, 39.02]]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Helenik Yay (Yunanistan)", "color": "#f97316", "weight": 2 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [20.00, 36.50], [21.00, 36.80], [22.00, 37.20], [23.00, 37.60],
+                                [24.00, 38.00], [25.00, 38.40], [26.00, 38.80], [27.00, 39.20]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Ege Denizi Fayları", "color": "#f59e0b", "weight": 1.5 },
+                        "geometry": {
+                            "type": "MultiLineString",
+                            "coordinates": [
+                                [[26.00, 39.50], [27.00, 39.35], [28.00, 39.20]],
+                                [[26.00, 38.20], [27.00, 38.05], [28.00, 37.90]],
+                                [[25.50, 37.00], [26.50, 36.85], [27.50, 36.70]]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Ölü Deniz Fay Zonu (Suriye)", "color": "#dc2626", "weight": 2.2 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [35.50, 33.00], [35.80, 33.50], [36.00, 34.00], [36.20, 34.50],
+                                [36.30, 35.00], [36.40, 35.50], [36.50, 36.00], [36.60, 36.50]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Zagros Fayları (İran)", "color": "#ef4444", "weight": 2 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [44.50, 37.00], [45.50, 36.50], [46.50, 36.00], [47.50, 35.50],
+                                [48.50, 35.00], [49.50, 34.50], [50.50, 34.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Kuzey İran Fayları", "color": "#ef4444", "weight": 1.8 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [44.00, 39.00], [46.00, 38.50], [48.00, 38.00], [50.00, 37.50],
+                                [52.00, 37.00], [54.00, 36.50]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Kafkas Fayları", "color": "#f59e0b", "weight": 1.8 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [41.00, 41.50], [42.00, 41.80], [43.00, 42.00], [44.00, 42.20],
+                                [45.00, 42.40], [46.00, 42.60]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Kıbrıs Yay Fayları", "color": "#f97316", "weight": 1.5 },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [32.00, 35.00], [33.00, 35.20], [34.00, 35.40], [35.00, 35.60]
+                            ]
+                        }
+                    }
+                ]
+            };
+            
+            map.data.addGeoJson(faultLinesData);
+            
+            map.data.setStyle(feature => {
+                return {
+                    strokeColor: feature.getProperty('color'),
+                    strokeWeight: feature.getProperty('weight'),
+                    strokeOpacity: 0.75,
+                    zIndex: 100
+                };
+            });
+            
+            map.data.addListener('click', event => {
+                const name = event.feature.getProperty('name');
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="color: #0d1117; padding: 12px;">
+                            <h3 style="margin: 0 0 8px 0; color: #dc2626; font-size: 14px;">
+                                🔴 ${name}
+                            </h3>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                Aktif tektonik hat
+                            </p>
+                        </div>
+                    `,
+                    position: event.latLng
+                });
+                infoWindow.open(map);
+            });
+            
+            faultLinesLoaded = true;
+            console.log('✅ Fay hatları yüklendi');
+        }
+        
         function toggleFaults() {
             const show = document.getElementById('showFaults').checked;
             
-            if (show && faultLines.length === 0) {
-                const faults = [
-                    { name: 'Kuzey Anadolu Fay Hattı', coords: [[40.8, 26.5], [40.7, 31.0], [40.5, 36.0], [40.3, 42.0]] },
-                    { name: 'Doğu Anadolu Fay Hattı', coords: [[39.5, 39.0], [38.5, 38.5], [37.5, 37.5], [36.5, 36.0]] }
-                ];
-                
-                faults.forEach(fault => {
-                    const line = new google.maps.Polyline({
-                        path: fault.coords.map(c => ({ lat: c[0], lng: c[1] })),
-                        strokeColor: '#dc2626',
-                        strokeOpacity: 0.7,
-                        strokeWeight: 3,
-                        map: map
-                    });
-                    faultLines.push(line);
+            if (show) {
+                if (!faultLinesLoaded) {
+                    loadFaultLines();
+                }
+                map.data.setStyle(feature => {
+                    return {
+                        strokeColor: feature.getProperty('color'),
+                        strokeWeight: feature.getProperty('weight'),
+                        strokeOpacity: 0.75,
+                        zIndex: 100
+                    };
                 });
             } else {
-                faultLines.forEach(line => line.setMap(show ? map : null));
+                map.data.setStyle({ visible: false });
             }
         }
         
