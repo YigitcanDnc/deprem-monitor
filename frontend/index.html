@@ -267,26 +267,7 @@
             transform: rotate(180deg);
         }
         
-        .collapsible-content {
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        
-        @media (max-width: 1024px) {
-            #leftPanel {
-                width: 280px;
-            }
-            
-            #header h1 {
-                font-size: 1.5em;
-            }
-        }
-        
         @media (max-width: 768px) {
-            body {
-                overflow-y: auto;
-            }
-            
             .panel-toggle {
                 display: block;
             }
@@ -319,14 +300,6 @@
                 opacity: 1;
             }
             
-            #header h1 {
-                font-size: 1.3em;
-            }
-            
-            #header p {
-                font-size: 0.8em;
-            }
-            
             #mainContainer {
                 flex-direction: column;
                 height: auto;
@@ -335,138 +308,13 @@
             
             #leftPanel {
                 width: 100%;
-                max-height: none;
                 border-right: none;
                 border-bottom: 2px solid #30363d;
-                padding: 10px;
             }
             
             #map {
                 min-height: 60vh;
                 height: 60vh;
-            }
-            
-            .btn {
-                padding: 6px 12px;
-                font-size: 12px;
-            }
-            
-            .filter-group label {
-                font-size: 12px;
-            }
-            
-            .filter-group select,
-            .filter-group input {
-                padding: 5px 8px;
-                font-size: 12px;
-            }
-            
-            .earthquake-item {
-                padding: 8px;
-            }
-            
-            #autoRefresh {
-                top: 65px;
-                right: 8px;
-                font-size: 9px;
-                padding: 6px 10px;
-            }
-            
-            .legend {
-                display: none;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            #header {
-                padding: 12px;
-            }
-            
-            #header h1 {
-                font-size: 1.1em;
-            }
-            
-            #header p {
-                font-size: 0.7em;
-            }
-            
-            #controls.expanded {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 6px;
-                padding: 8px;
-            }
-            
-            .btn {
-                width: 100%;
-                padding: 10px;
-                font-size: 13px;
-            }
-            
-            .filter-group {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .filter-group label {
-                font-size: 11px;
-                min-width: 80px;
-            }
-            
-            .filter-group select,
-            .filter-group input {
-                flex: 1;
-                padding: 8px;
-                font-size: 12px;
-            }
-            
-            #map {
-                min-height: 70vh;
-                height: 70vh;
-            }
-            
-            .panel-section.expanded h3 {
-                font-size: 0.9em;
-            }
-            
-            .earthquake-item {
-                padding: 8px;
-                margin: 6px 0;
-            }
-            
-            .eq-magnitude {
-                font-size: 1.2em;
-            }
-            
-            .eq-location {
-                font-size: 0.8em;
-            }
-            
-            .eq-time {
-                font-size: 0.7em;
-            }
-            
-            #autoRefresh {
-                top: 60px;
-                right: 5px;
-                font-size: 8px;
-                padding: 5px 8px;
-            }
-            
-            .anomaly-alert {
-                padding: 10px 12px;
-                font-size: 0.8em;
-            }
-        }
-        
-        @media (max-width: 360px) {
-            #header h1 {
-                font-size: 1em;
-            }
-            
-            .filter-group label {
-                font-size: 10px;
-                min-width: 70px;
             }
         }
     </style>
@@ -605,66 +453,40 @@
                         stylers: [{ color: "#4a5568" }, { weight: 2 }]
                     },
                     {
-                        featureType: "administrative.province",
-                        elementType: "geometry.stroke",
-                        stylers: [{ color: "#94a3b8" }, { weight: 1 }]
-                    },
-                    {
-                        featureType: "administrative.locality",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#f3f4f6" }]
-                    },
-                    {
                         featureType: "water",
                         elementType: "geometry",
                         stylers: [{ color: "#1e3a5f" }]
                     },
                     {
-                        featureType: "water",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#94a3b8" }]
-                    },
-                    {
                         featureType: "landscape",
                         elementType: "geometry",
                         stylers: [{ color: "#2d3748" }]
-                    },
-                    {
-                        featureType: "road",
-                        stylers: [{ visibility: "simplified" }]
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "geometry",
-                        stylers: [{ color: "#4a5568" }]
                     }
                 ]
             });
             
-            if (window.innerWidth > 768) {
-                const legend = document.createElement('div');
-                legend.className = 'legend';
-                legend.innerHTML = `
-                    <h4>Deprem Büyüklüğü</h4>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #22c55e;"></div>
-                        <span>2.5 - 3.5</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #eab308;"></div>
-                        <span>3.5 - 4.5</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #f97316;"></div>
-                        <span>4.5 - 5.5</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #dc2626;"></div>
-                        <span>5.5+</span>
-                    </div>
-                `;
-                map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
-            }
+            const legend = document.createElement('div');
+            legend.className = 'legend';
+            legend.innerHTML = `
+                <h4>Deprem Büyüklüğü</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #22c55e;"></div>
+                    <span>2.5 - 3.5</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #eab308;"></div>
+                    <span>3.5 - 4.5</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f97316;"></div>
+                    <span>4.5 - 5.5</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #dc2626;"></div>
+                    <span>5.5+</span>
+                </div>
+            `;
+            map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
             
             loadData();
             startAutoRefresh();
@@ -688,11 +510,7 @@
                 document.getElementById('stat1').textContent = stats.total_24h;
                 document.getElementById('stat2').textContent = stats.max_magnitude_24h.toFixed(1);
                 document.getElementById('stat3').textContent = stats.active_anomalies;
-                document.getElementById('stat4').textContent = new Date(stats.last_update).toLocaleTimeString('tr-TR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
+                document.getElementById('stat4').textContent = new Date(stats.last_update).toLocaleTimeString('tr-TR');
                 
                 updateTopEarthquakes();
                 
@@ -784,27 +602,17 @@
                         strokeColor: '#ffffff',
                         strokeWeight: isLargest ? 3 : 2
                     },
-                    title: `Büyüklük ${eq.magnitude} - ${eq.location}`,
+                    title: 'Büyüklük ' + eq.magnitude + ' - ' + eq.location,
                     animation: isLargest ? google.maps.Animation.BOUNCE : null
                 });
                 
                 const eqTime = new Date(eq.timestamp);
                 
                 const infoWindow = new google.maps.InfoWindow({
-                    content: `
-                        <div style="color: #0d1117; padding: 16px; min-width: 280px; font-family: 'Segoe UI', sans-serif;">
-                            <h3 style="margin: 0 0 14px 0; color: #dc2626; font-size: 18px; font-weight: 700; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">📍 Deprem Detayları</h3>
-                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Büyüklük:</strong> <span style="color: #dc2626; font-weight: 700; font-size: 16px;">${eq.magnitude.toFixed(1)}</span></p>
-                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Derinlik:</strong> ${eq.depth.toFixed(1)} km</p>
-                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Konum:</strong> ${eq.location}</p>
-                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Tarih:</strong> ${eqTime.toLocaleDateString('tr-TR')}</p>
-                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Saat:</strong> ${eqTime.toLocaleTimeString('tr-TR')}</p>
-                            <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #374151;">Kaynak:</strong> ${eq.source}</p>
-                        </div>
-                    `
+                    content: '<div style="color: #0d1117; padding: 16px;"><h3 style="color: #dc2626;">📍 Deprem</h3><p><strong>Büyüklük:</strong> ' + eq.magnitude.toFixed(1) + '</p><p><strong>Konum:</strong> ' + eq.location + '</p><p><strong>Saat:</strong> ' + eqTime.toLocaleTimeString('tr-TR') + '</p></div>'
                 });
                 
-                marker.addListener('click', () => {
+                marker.addListener('click', function() {
                     infoWindow.open(map, marker);
                 });
                 
@@ -865,230 +673,36 @@
                     fillOpacity: 0.12,
                     map: map,
                     center: center,
-                    radius: anomaly.radius_km * 1000,
-                    clickable: true
-                });
-                
-                const outerCircle = new google.maps.Circle({
-                    strokeColor: '#f97316',
-                    strokeOpacity: 0.25strokeWeight: 1,
-                    fillColor: '#f97316',
-                    fillOpacity: 0.05,
-                    map: map,
-                    center: center,
-                    radius: anomaly.radius_km * 1500,
-                });
-                
-                const marker = new google.maps.Marker({
-                    position: center,
-                    map: map,
-                    icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 8,
-                        fillColor: '#dc2626',
-                        fillOpacity: 0.85,
-                        strokeColor: '#ffffff',
-                        strokeWeight: 2
-                    },
-                    title: `Anomali Bölgesi - Score: ${anomaly.z_score.toFixed(2)}`,
-                    animation: google.maps.Animation.DROP
-                });
-                
-                const anomalyInfo = new google.maps.InfoWindow({
-                    content: `
-                        <div style="color: #0d1117; padding: 16px; min-width: 300px; font-family: 'Segoe UI', sans-serif;">
-                            <h3 style="margin: 0 0 14px 0; color: #dc2626; font-size: 18px; font-weight: 700; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
-                                ⚠️ Anomali Bölgesi
-                            </h3>
-                            <p style="margin: 8px 0; font-size: 14px;">
-                                <strong style="color: #374151;">Konum:</strong> ${anomaly.location || 'Bilinmiyor'}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px;">
-                                <strong style="color: #374151;">Yarıçap:</strong> ${anomaly.radius_km.toFixed(0)} km
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px;">
-                                <strong style="color: #374151;">Score:</strong> <span style="color: #dc2626; font-weight: 700;">${anomaly.z_score.toFixed(1)}</span>
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px;">
-                                <strong style="color: #374151;">Tip:</strong> ${anomaly.anomaly_type || 'Frekans'}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px;">
-                                <strong style="color: #374151;">Durum:</strong> 
-                                <span style="color: #dc2626; font-weight: 600;">${(anomaly.alert_level || 'red').toUpperCase()}</span>
-                            </p>
-                            <div style="margin-top: 12px; padding: 10px; background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px;">
-                                <p style="margin: 0; font-size: 13px; color: #991b1b;">
-                                    <strong>⚠️ Dikkat:</strong> ${anomaly.description || 'Anomali tespit edildi'}
-                                </p>
-                            </div>
-                        </div>
-                    `
-                });
-                
-                marker.addListener('click', () => {
-                    anomalyInfo.open(map, marker);
-                });
-                
-                circle.addListener('click', () => {
-                    anomalyInfo.open(map, marker);
+                    radius: anomaly.radius_km * 1000
                 });
                 
                 anomalyCircles.push(circle);
-                anomalyCircles.push(outerCircle);
-                anomalyCircles.push(marker);
             });
         }
         
         function loadFaultLines() {
-            console.log('🗺️ Fay hatları yükleniyor...');
+            console.log('Fay hatları yükleniyor...');
             
             const faultLinesData = {
                 "type": "FeatureCollection",
                 "features": [
                     {
                         "type": "Feature",
-                        "properties": { "name": "Kuzey Anadolu Fay Hattı", "color": "#d4c5a9", "weight": 1.5 },
+                        "properties": { "name": "Kuzey Anadolu Fay Hattı" },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
-                                [26.00, 40.90], [26.50, 40.85], [27.00, 40.80], [27.50, 40.75],
-                                [28.00, 40.72], [28.50, 40.69], [29.00, 40.66], [29.50, 40.63],
-                                [30.00, 40.60], [30.50, 40.58], [31.00, 40.55], [31.50, 40.53],
-                                [32.00, 40.51], [32.50, 40.49], [33.00, 40.47], [33.50, 40.46],
-                                [34.00, 40.45], [34.50, 40.43], [35.00, 40.41], [35.50, 40.39],
-                                [36.00, 40.37], [36.50, 40.34], [37.00, 40.31], [37.50, 40.29],
-                                [38.00, 40.27], [38.50, 40.25], [39.00, 40.23], [39.50, 40.20],
-                                [40.00, 40.17], [40.50, 40.14], [41.00, 40.11], [41.50, 40.08],
-                                [42.00, 40.06], [42.50, 40.04], [43.00, 40.03], [43.50, 40.02],
-                                [44.00, 40.00]
+                                [26.00, 40.90], [30.00, 40.60], [35.00, 40.41], [40.00, 40.17], [44.00, 40.00]
                             ]
                         }
                     },
                     {
                         "type": "Feature",
-                        "properties": { "name": "Doğu Anadolu Fay Hattı", "color": "#d4c5a9", "weight": 1.5 },
+                        "properties": { "name": "Doğu Anadolu Fay Hattı" },
                         "geometry": {
                             "type": "LineString",
                             "coordinates": [
-                                [35.50, 36.70], [35.80, 36.85], [36.10, 37.00], [36.40, 37.15],
-                                [36.70, 37.30], [37.00, 37.45], [37.30, 37.60], [37.60, 37.75],
-                                [37.90, 37.90], [38.20, 38.05], [38.50, 38.20], [38.80, 38.35],
-                                [39.10, 38.50], [39.40, 38.65], [39.70, 38.80], [40.00, 38.95],
-                                [40.30, 39.10], [40.60, 39.25], [40.90, 39.40], [41.20, 39.55],
-                                [41.50, 39.70], [41.80, 39.85], [42.10, 40.00], [42.40, 40.15],
-                                [42.70, 40.30], [43.00, 40.45], [43.30, 40.60], [43.60, 40.75],
-                                [43.90, 40.90], [44.20, 41.05]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Gediz Grabeni", "color": "#d4c5a9", "weight": 1.2 },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [26.30, 38.88], [26.80, 38.85], [27.30, 38.82], [27.80, 38.79],
-                                [28.30, 38.75], [28.80, 38.71], [29.30, 38.68]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Büyük Menderes Grabeni", "color": "#d4c5a9", "weight": 1.2 },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [26.80, 37.90], [27.30, 37.87], [27.80, 37.83], [28.30, 37.79],
-                                [28.80, 37.75], [29.30, 37.71], [29.80, 37.68]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Simav Grabeni", "color": "#d4c5a9", "weight": 1.2 },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [28.60, 39.20], [28.90, 39.15], [29.20, 39.10], [29.50, 39.05], [29.80, 39.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Marmara Fayları", "color": "#d4c5a9", "weight": 1.5 },
-                        "geometry": {
-                            "type": "MultiLineString",
-                            "coordinates": [
-                                [[26.50, 40.45], [27.00, 40.50], [27.50, 40.55], [28.00, 40.58], [28.50, 40.60]],
-                                [[28.50, 40.65], [29.00, 40.68], [29.50, 40.70], [30.00, 40.72]]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Ege Fayları", "color": "#d4c5a9", "weight": 1.2 },
-                        "geometry": {
-                            "type": "MultiLineString",
-                            "coordinates": [
-                                [[25.80, 39.60], [26.30, 39.50], [26.80, 39.40], [27.30, 39.30]],
-                                [[25.80, 38.30], [26.30, 38.20], [26.80, 38.10], [27.30, 38.00]],
-                                [[25.30, 37.20], [25.80, 37.10], [26.30, 37.00], [26.80, 36.90]]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Helenik Yay", "color": "#d4c5a9", "weight": 1.2 },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [19.00, 36.30], [20.00, 36.60], [21.00, 36.95], [22.00, 37.35],
-                                [23.00, 37.80], [24.00, 38.30], [25.00, 38.85], [26.00, 39.45]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Ölü Deniz Fay Zonu", "color": "#d4c5a9", "weight": 1.5 },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [35.40, 29.50], [35.50, 30.50], [35.60, 31.50], [35.70, 32.50],
-                                [35.80, 33.50], [36.00, 34.00], [36.10, 34.50], [36.20, 35.00],
-                                [36.30, 35.50], [36.40, 36.00], [36.50, 36.50], [36.60, 37.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Zagros Fayları", "color": "#d4c5a9", "weight": 1.2 },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [44.00, 37.50], [45.00, 37.00], [46.00, 36.50], [47.00, 36.00],
-                                [48.00, 35.50], [49.00, 35.00], [50.00, 34.50], [51.00, 34.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Kuzey İran Fayları", "color": "#d4c5a9", "weight": 1.2 },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [43.50, 39.50], [45.00, 39.00], [46.50, 38.50], [48.00, 38.00],
-                                [49.50, 37.50], [51.00, 37.00], [52.50, 36.50], [54.00, 36.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Kafkas Fayları", "color": "#d4c5a9", "weight": 1.2 },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [40.50, 41.80], [41.50, 42.00], [42.50, 42.20], [43.50, 42.40],
-                                [44.50, 42.60], [45.50, 42.80]
+                                [35.50, 36.70], [38.50, 38.20], [41.50, 39.70], [44.20, 41.05]
                             ]
                         }
                     }
@@ -1102,111 +716,32 @@
             window.faultDataLayer.setStyle({
                 strokeColor: '#d4c5a9',
                 strokeWeight: 1.5,
-                strokeOpacity: 0.8,
-                zIndex: 150
-            });
-            
-            window.faultDataLayer.addListener('click', event => {
-                const name = event.feature.getProperty('name');
-                const infoWindow = new google.maps.InfoWindow({
-                    content: `
-                        <div style="color: #0d1117; padding: 12px;">
-                            <h3 style="margin: 0 0 8px 0; color: #d4c5a9; font-size: 14px; font-weight: 700;">
-                                ${name}
-                            </h3>
-                            <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                Fay Hattı
-                            </p>
-                        </div>
-                    `,
-                    position: event.latLng
-                });
-                infoWindow.open(map);
+                strokeOpacity: 0.8
             });
             
             faultLinesLoaded = true;
-            console.log('✅ Fay hatları yüklendi');
         }
         
         async function loadTectonicPlates() {
-            console.log('🌍 Tektonik plakalar yükleniyor...');
+            console.log('Tektonik plakalar yükleniyor...');
             
             try {
                 const response = await fetch('https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json');
-                const tectonicPlatesData = await response.json();
+                const data = await response.json();
                 
                 window.tectonicPlatesLayer = new google.maps.Data();
-                window.tectonicPlatesLayer.addGeoJson(tectonicPlatesData);
+                window.tectonicPlatesLayer.addGeoJson(data);
                 window.tectonicPlatesLayer.setMap(map);
                 
-                window.tectonicPlatesLayer.setStyle(feature => {
-                    const type = feature.getProperty('type');
-                    
-                    if (type === 'subduction') {
-                        return {
-                            strokeColor: '#b91c1c',
-                            strokeWeight: 3.5,
-                            strokeOpacity: 0.95,
-                            zIndex: 210
-                        };
-                    }
-                    else if (type === 'ridge') {
-                        return {
-                            strokeColor: '#f97316',
-                            strokeWeight: 2.5,
-                            strokeOpacity: 0.9,
-                            zIndex: 205
-                        };
-                    }
-                    else if (type === 'transform') {
-                        return {
-                            strokeColor: '#dc2626',
-                            strokeWeight: 2.5,
-                            strokeOpacity: 0.9,
-                            zIndex: 205
-                        };
-                    }
-                    else {
-                        return {
-                            strokeColor: '#dc2626',
-                            strokeWeight: 3,
-                            strokeOpacity: 0.9,
-                            zIndex: 200
-                        };
-                    }
-                });
-                
-                window.tectonicPlatesLayer.addListener('click', event => {
-                    const name = event.feature.getProperty('Name') || 'Plaka Sınırı';
-                    const type = event.feature.getProperty('type') || 'Genel';
-                    
-                    let typeText = 'Plaka Sınırı';
-                    if (type === 'subduction') typeText = 'Dalma Zonu (Subduction)';
-                    else if (type === 'ridge') typeText = 'Yayılma Sırtı (Ridge)';
-                    else if (type === 'transform') typeText = 'Transform Fay';
-                    
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: `
-                            <div style="color: #0d1117; padding: 12px;">
-                                <h3 style="margin: 0 0 8px 0; color: #dc2626; font-size: 14px; font-weight: 700;">
-                                    🌍 ${name}
-                                </h3>
-                                <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                    ${typeText}
-                                </p>
-                            </div>
-                        `,
-                        position: event.latLng
-                    });
-                    infoWindow.open(map);
+                window.tectonicPlatesLayer.setStyle({
+                    strokeColor: '#dc2626',
+                    strokeWeight: 2,
+                    strokeOpacity: 0.9
                 });
                 
                 tectonicPlatesLoaded = true;
-                console.log('✅ Tektonik plakalar yüklendi (GitHub - PB2002)');
-                
             } catch (error) {
-                console.error('❌ Tektonik plaka yükleme hatası:', error);
-                alert('Tektonik plaka verileri yüklenemedi. İnternet bağlantınızı kontrol edin.');
+                console.error('Plaka yükleme hatası:', error);
             }
         }
         
@@ -1215,7 +750,7 @@
             
             if (show && !faultLinesLoaded) {
                 loadFaultLines();
-            } else if (faultLinesLoaded && window.faultDataLayer) {
+            } else if (window.faultDataLayer) {
                 window.faultDataLayer.setMap(show ? map : null);
             }
         }
@@ -1225,7 +760,7 @@
             
             if (show && !tectonicPlatesLoaded) {
                 loadTectonicPlates();
-            } else if (tectonicPlatesLoaded && window.tectonicPlatesLayer) {
+            } else if (window.tectonicPlatesLayer) {
                 window.tectonicPlatesLayer.setMap(show ? map : null);
             }
         }
@@ -1247,9 +782,7 @@
             
             const alertDiv = document.createElement('div');
             alertDiv.className = 'anomaly-alert';
-            alertDiv.innerHTML = `
-                <strong>⚠️ ${anomalies.length} Bölgede Anomali Tespit Edildi!</strong>
-            `;
+            alertDiv.innerHTML = '<strong>⚠️ ' + anomalies.length + ' Bölgede Anomali Tespit Edildi!</strong>';
             document.body.insertBefore(alertDiv, document.body.firstChild);
         }
         
@@ -1258,13 +791,13 @@
         }
         
         function startAutoRefresh() {
-            autoRefreshInterval = setInterval(() => {
+            autoRefreshInterval = setInterval(function() {
                 console.log('Otomatik yenileme...');
                 loadData();
             }, 5 * 60 * 1000);
         }
     </script>
     
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6sOp517PKb6Snl9mmk7AW3afLQrnJSDw&libraries=visualization&callback=initMap" async defer></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6sOp517PKb6Snl9mmk7AW3afLQrnJSDw&libraries=visualization&callback=initMap"></script>
 </body>
 </html>
