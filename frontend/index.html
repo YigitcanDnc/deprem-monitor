@@ -368,8 +368,13 @@
         </div>
         
         <div class="checkbox-group">
-            <input type="checkbox" id="showFaults" onchange="toggleFaults()">
-            <label for="showFaults">Fay Hatları</label>
+            <input type="checkbox" id="showFaultsTurkey" onchange="toggleFaultsTurkey()">
+            <label for="showFaultsTurkey">Faylar (TR)</label>
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" id="showFaultsGlobal" onchange="toggleFaultsGlobal()">
+            <label for="showFaultsGlobal">Faylar (Global)</label>
         </div>
         
         <div class="checkbox-group">
@@ -419,7 +424,8 @@
         let allEarthquakes = [];
         let anomalies = [];
         let autoRefreshInterval;
-        let faultLinesLoaded = false;
+        let faultLinesTurkeyLoaded = false;
+        let faultLinesGlobalLoaded = false;
         let tectonicPlatesLoaded = false;
         
         function togglePanel(panelId) {
@@ -684,28 +690,335 @@
             });
         }
         
-        async function loadFaultLines() {
-            console.log('🗺️ Fay hatları yükleniyor (GEM Global Active Faults)...');
+        async function loadFaultLinesTurkey() {
+            console.log('🇹🇷 Türkiye fay hatları yükleniyor...');
+            
+            const turkeyFaults = {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Kuzey Anadolu Fay Zonu (KAFZ)" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [26.00, 40.90], [26.50, 40.85], [27.00, 40.80], [27.50, 40.75],
+                                [28.00, 40.72], [28.50, 40.69], [29.00, 40.66], [29.50, 40.63],
+                                [30.00, 40.60], [30.50, 40.58], [31.00, 40.55], [31.50, 40.53],
+                                [32.00, 40.51], [32.50, 40.49], [33.00, 40.47], [33.50, 40.46],
+                                [34.00, 40.45], [34.50, 40.43], [35.00, 40.41], [35.50, 40.39],
+                                [36.00, 40.37], [36.50, 40.34], [37.00, 40.31], [37.50, 40.29],
+                                [38.00, 40.27], [38.50, 40.25], [39.00, 40.23], [39.50, 40.20],
+                                [40.00, 40.17], [40.50, 40.14], [41.00, 40.11], [41.50, 40.08],
+                                [42.00, 40.06], [42.50, 40.04], [43.00, 40.03], [43.50, 40.02],
+                                [44.00, 40.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Doğu Anadolu Fay Zonu (DAFZ)" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [35.50, 36.70], [35.80, 36.85], [36.10, 37.00], [36.40, 37.15],
+                                [36.70, 37.30], [37.00, 37.45], [37.30, 37.60], [37.60, 37.75],
+                                [37.90, 37.90], [38.20, 38.05], [38.50, 38.20], [38.80, 38.35],
+                                [39.10, 38.50], [39.40, 38.65], [39.70, 38.80], [40.00, 38.95],
+                                [40.30, 39.10], [40.60, 39.25], [40.90, 39.40], [41.20, 39.55],
+                                [41.50, 39.70], [41.80, 39.85], [42.10, 40.00], [42.40, 40.15],
+                                [42.70, 40.30], [43.00, 40.45], [43.30, 40.60], [43.60, 40.75],
+                                [43.90, 40.90], [44.20, 41.05]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Ölü Deniz Fay Zonu" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [35.40, 29.50], [35.45, 30.00], [35.50, 30.50], [35.55, 31.00],
+                                [35.60, 31.50], [35.65, 32.00], [35.70, 32.50], [35.75, 33.00],
+                                [35.80, 33.50], [35.90, 34.00], [36.00, 34.50], [36.10, 35.00],
+                                [36.20, 35.50], [36.30, 36.00], [36.40, 36.50], [36.50, 37.00],
+                                [36.60, 37.50]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Gediz Grabeni" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [26.30, 38.88], [26.55, 38.87], [26.80, 38.85], [27.05, 38.84],
+                                [27.30, 38.82], [27.55, 38.81], [27.80, 38.79], [28.05, 38.77],
+                                [28.30, 38.75], [28.55, 38.73], [28.80, 38.71], [29.05, 38.70],
+                                [29.30, 38.68]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Büyük Menderes Grabeni" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [26.80, 37.90],[27.05, 37.89], [27.30, 37.87], [27.55, 37.85],
+                                [27.80, 37.83], [28.05, 37.81], [28.30, 37.79], [28.55, 37.77],
+                                [28.80, 37.75], [29.05, 37.73], [29.30, 37.71], [29.55, 37.70],
+                                [29.80, 37.68]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Küçük Menderes Grabeni" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [27.00, 38.20], [27.30, 38.18], [27.60, 38.16], [27.90, 38.14],
+                                [28.20, 38.12], [28.50, 38.10]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Simav Grabeni" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [28.60, 39.20], [28.75, 39.18], [28.90, 39.15], [29.05, 39.13],
+                                [29.20, 39.10], [29.35, 39.08], [29.50, 39.05], [29.65, 39.03],
+                                [29.80, 39.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Marmara Fayları - Kuzey Kol" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [26.50, 40.45], [27.00, 40.50], [27.50, 40.55], [28.00, 40.58],
+                                [28.50, 40.60], [29.00, 40.62], [29.50, 40.64], [30.00, 40.65]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Marmara Fayları - Güney Kol" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [28.50, 40.65], [29.00, 40.68], [29.50, 40.70], [30.00, 40.72],
+                                [30.50, 40.73], [31.00, 40.74]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Ege Grabenleri - Kuzey" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [25.80, 39.60], [26.05, 39.55], [26.30, 39.50], [26.55, 39.45],
+                                [26.80, 39.40], [27.05, 39.35], [27.30, 39.30]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Ege Grabenleri - Orta" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [25.80, 38.30], [26.05, 38.25], [26.30, 38.20], [26.55, 38.15],
+                                [26.80, 38.10], [27.05, 38.05], [27.30, 38.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Ege Grabenleri - Güney" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [25.30, 37.20], [25.55, 37.15], [25.80, 37.10], [26.05, 37.05],
+                                [26.30, 37.00], [26.55, 36.95], [26.80, 36.90]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Helenik Yay (Ege Dalma Zonu)" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [19.00, 36.30], [20.00, 36.60], [21.00, 36.95], [22.00, 37.35],
+                                [23.00, 37.80], [24.00, 38.30], [25.00, 38.85], [26.00, 39.45],
+                                [27.00, 40.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Ecemiş Fay Zonu" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [34.50, 37.50], [34.70, 37.80], [34.90, 38.10], [35.10, 38.40],
+                                [35.30, 38.70], [35.50, 39.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Tuz Gölü Fay Zonu" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [33.00, 38.50], [33.30, 38.70], [33.60, 38.90], [33.90, 39.10],
+                                [34.20, 39.30], [34.50, 39.50]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Tuzla Fay Zonu" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [36.50, 38.00], [36.80, 38.20], [37.10, 38.40], [37.40, 38.60],
+                                [37.70, 38.80], [38.00, 39.00]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Malatya Fay Zonu" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [37.50, 38.20], [37.80, 38.30], [38.10, 38.40], [38.40, 38.50],
+                                [38.70, 38.60], [39.00, 38.70]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Ovacık Fay Zonu" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [39.00, 39.20], [39.20, 39.30], [39.40, 39.40], [39.60, 39.50],
+                                [39.80, 39.60], [40.00, 39.70]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Zagros Fay Zonu (Türkiye Sınırı)" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [44.00, 37.50], [44.50, 37.30], [45.00, 37.10], [45.50, 36.90],
+                                [46.00, 36.70]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Kuzey İran Fay Zonu (Türkiye Sınırı)" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [43.50, 39.50], [44.00, 39.30], [44.50, 39.10], [45.00, 38.90],
+                                [45.50, 38.70], [46.00, 38.50]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Kafkas Fay Zonu" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [40.50, 41.80], [41.00, 41.90], [41.50, 42.00], [42.00, 42.10],
+                                [42.50, 42.20], [43.00, 42.30], [43.50, 42.40], [44.00, 42.50],
+                                [44.50, 42.60], [45.00, 42.70], [45.50, 42.80], [46.00, 42.90]
+                            ]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Kıbrıs Yayı" },
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": [
+                                [28.00, 35.50], [29.00, 35.30], [30.00, 35.20], [31.00, 35.15],
+                                [32.00, 35.10], [33.00, 35.08], [34.00, 35.10], [35.00, 35.20],
+                                [36.00, 35.40]
+                            ]
+                        }
+                    }
+                ]
+            };
+            
+            window.faultDataLayerTurkey = new google.maps.Data();
+            window.faultDataLayerTurkey.addGeoJson(turkeyFaults);
+            window.faultDataLayerTurkey.setMap(map);
+            
+            window.faultDataLayerTurkey.setStyle({
+                strokeColor: '#d4c5a9',
+                strokeWeight: 1.8,
+                strokeOpacity: 0.9,
+                zIndex: 150
+            });
+            
+            window.faultDataLayerTurkey.addListener('click', event => {
+                const name = event.feature.getProperty('name');
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="color: #0d1117; padding: 12px;">
+                            <h3 style="margin: 0 0 8px 0; color: #d4c5a9; font-size: 14px; font-weight: 700;">
+                                ${name}
+                            </h3>
+                            <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                Aktif Fay Zonu
+                            </p>
+                        </div>
+                    `,
+                    position: event.latLng
+                });
+                infoWindow.open(map);
+            });
+            
+            faultLinesTurkeyLoaded = true;
+            console.log('✅ Türkiye fay hatları yüklendi');
+        }
+        
+        async function loadFaultLinesGlobal() {
+            console.log('🌍 Global fay hatları yükleniyor (GEM Active Faults)...');
             
             try {
                 const response = await fetch('https://raw.githubusercontent.com/GEMScienceTools/gem-global-active-faults/master/geojson/gem_active_faults.geojson');
                 const faultData = await response.json();
                 
-                window.faultDataLayer = new google.maps.Data();
-                window.faultDataLayer.addGeoJson(faultData);
-                window.faultDataLayer.setMap(map);
+                window.faultDataLayerGlobal = new google.maps.Data();
+                window.faultDataLayerGlobal.addGeoJson(faultData);
+                window.faultDataLayerGlobal.setMap(map);
                 
-                window.faultDataLayer.setStyle(feature => {
-                    return {
-                        strokeColor: '#d4c5a9',
-                        strokeWeight: 1.5,
-                        strokeOpacity: 0.85,
-                        zIndex: 150,
-                        fillOpacity: 0
-                    };
+                window.faultDataLayerGlobal.setStyle({
+                    strokeColor: '#d4c5a9',
+                    strokeWeight: 1.3,
+                    strokeOpacity: 0.75,
+                    zIndex: 140,
+                    fillOpacity: 0
                 });
                 
-                window.faultDataLayer.addListener('click', event => {
+                window.faultDataLayerGlobal.addListener('click', event => {
                     const name = event.feature.getProperty('name') || event.feature.getProperty('fault_name') || 'Fay Bölgesi';
                     const faultType = event.feature.getProperty('slip_type') || 'Bilinmiyor';
                     
@@ -725,182 +1038,13 @@
                     infoWindow.open(map);
                 });
                 
-                faultLinesLoaded = true;
-                console.log('✅ Fay hatları yüklendi (GEM Active Faults)');
+                faultLinesGlobalLoaded = true;
+                console.log('✅ Global fay hatları yüklendi (GEM Active Faults)');
                 
             } catch (error) {
-                console.error('❌ Fay hatları yükleme hatası, fallback aktif:', error);
-                loadBasicTurkeyFaults();
+                console.error('❌ Global fay hatları yükleme hatası:', error);
+                alert('Global fay verileri yüklenemedi. İnternet bağlantınızı kontrol edin.');
             }
-        }
-        
-        function loadBasicTurkeyFaults() {
-            console.log('📍 Temel Türkiye fayları yükleniyor (fallback)...');
-            
-            const basicFaults = {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Kuzey Anadolu Fay Zonu" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [26.00, 40.90], [27.00, 40.80], [28.00, 40.72], [29.00, 40.66],
-                                [30.00, 40.60], [31.00, 40.55], [32.00, 40.51], [33.00, 40.47],
-                                [34.00, 40.45], [35.00, 40.41], [36.00, 40.37], [37.00, 40.31],
-                                [38.00, 40.27], [39.00, 40.23], [40.00, 40.17], [41.00, 40.11],
-                                [42.00, 40.06], [43.00, 40.03], [44.00, 40.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Doğu Anadolu Fay Zonu" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [35.50, 36.70], [36.10, 37.00], [36.70, 37.30], [37.30, 37.60],
-                                [37.90, 37.90], [38.50, 38.20], [39.10, 38.50], [39.70, 38.80],
-                                [40.30, 39.10], [40.90, 39.40], [41.50, 39.70], [42.10, 40.00],
-                                [42.70, 40.30], [43.30, 40.60], [43.90, 40.90], [44.20, 41.05]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Ölü Deniz Fay Zonu" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [35.40, 29.50], [35.50, 30.50], [35.60, 31.50], [35.70, 32.50],
-                                [35.80, 33.50], [36.00, 34.00], [36.20, 35.00], [36.40, 36.00],
-                                [36.60, 37.00]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Gediz Grabeni" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [26.30, 38.88], [26.80, 38.85], [27.30, 38.82], [27.80, 38.79],
-                                [28.30, 38.75], [28.80, 38.71], [29.30, 38.68]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Büyük Menderes Grabeni" },
-                        "geometry": {
-                            "type": "LineString","coordinates": [
-                                [26.80, 37.90], [27.30, 37.87], [27.80, 37.83], [28.30, 37.79],
-                                [28.80, 37.75], [29.30, 37.71], [29.80, 37.68]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Marmara Fayları" },
-                        "geometry": {
-                            "type": "MultiLineString",
-                            "coordinates": [
-                                [[26.50, 40.45], [27.00, 40.50], [27.50, 40.55], [28.00, 40.58], [28.50, 40.60]],
-                                [[28.50, 40.65], [29.00, 40.68], [29.50, 40.70], [30.00, 40.72]]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Ege Fay Sistemleri" },
-                        "geometry": {
-                            "type": "MultiLineString",
-                            "coordinates": [
-                                [[25.80, 39.60], [26.30, 39.50], [26.80, 39.40], [27.30, 39.30]],
-                                [[25.80, 38.30], [26.30, 38.20], [26.80, 38.10], [27.30, 38.00]],
-                                [[25.30, 37.20], [25.80, 37.10], [26.30, 37.00], [26.80, 36.90]]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Helenik Yay" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [19.00, 36.30], [20.00, 36.60], [21.00, 36.95], [22.00, 37.35],
-                                [23.00, 37.80], [24.00, 38.30], [25.00, 38.85], [26.00, 39.45]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Zagros Fay Zonu" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [44.00, 37.50], [45.00, 37.00], [46.00, 36.50], [47.00, 36.00],
-                                [48.00, 35.50], [49.00, 35.00], [50.00, 34.50], [51.00, 34.00], [52.00, 33.50]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Kuzey İran Fay Zonu" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [43.50, 39.50], [45.00, 39.00], [46.50, 38.50], [48.00, 38.00],
-                                [49.50, 37.50], [51.00, 37.00], [52.50, 36.50], [54.00, 36.00], [55.50, 35.50]
-                            ]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Kafkas Fay Zonu" },
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": [
-                                [40.50, 41.80], [41.50, 42.00], [42.50, 42.20], [43.50, 42.40],
-                                [44.50, 42.60], [45.50, 42.80], [46.50, 43.00]
-                            ]
-                        }
-                    }
-                ]
-            };
-            
-            window.faultDataLayer = new google.maps.Data();
-            window.faultDataLayer.addGeoJson(basicFaults);
-            window.faultDataLayer.setMap(map);
-            
-            window.faultDataLayer.setStyle({
-                strokeColor: '#d4c5a9',
-                strokeWeight: 1.5,
-                strokeOpacity: 0.85,
-                zIndex: 150
-            });
-            
-            window.faultDataLayer.addListener('click', event => {
-                const name = event.feature.getProperty('name');
-                const infoWindow = new google.maps.InfoWindow({
-                    content: `
-                        <div style="color: #0d1117; padding: 12px;">
-                            <h3 style="margin: 0 0 8px 0; color: #d4c5a9; font-size: 14px; font-weight: 700;">
-                                ${name}
-                            </h3>
-                            <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                Aktif Fay Sistemi
-                            </p>
-                        </div>
-                    `,
-                    position: event.latLng
-                });
-                infoWindow.open(map);
-            });
-            
-            faultLinesLoaded = true;
-            console.log('✅ Temel Türkiye fayları yüklendi');
         }
         
         async function loadTectonicPlates() {
@@ -948,13 +1092,23 @@
             }
         }
         
-        function toggleFaults() {
-            const show = document.getElementById('showFaults').checked;
+        function toggleFaultsTurkey() {
+            const show = document.getElementById('showFaultsTurkey').checked;
             
-            if (show && !faultLinesLoaded) {
-                loadFaultLines();
-            } else if (window.faultDataLayer) {
-                window.faultDataLayer.setMap(show ? map : null);
+            if (show && !faultLinesTurkeyLoaded) {
+                loadFaultLinesTurkey();
+            } else if (window.faultDataLayerTurkey) {
+                window.faultDataLayerTurkey.setMap(show ? map : null);
+            }
+        }
+        
+        function toggleFaultsGlobal() {
+            const show = document.getElementById('showFaultsGlobal').checked;
+            
+            if (show && !faultLinesGlobalLoaded) {
+                loadFaultLinesGlobal();
+            } else if (window.faultDataLayerGlobal) {
+                window.faultDataLayerGlobal.setMap(show ? map : null);
             }
         }
         
